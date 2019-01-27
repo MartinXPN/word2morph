@@ -1,0 +1,66 @@
+from typing import Any, List, Set, Union, Optional
+
+
+class Mapping(object):
+    def __init__(self) -> None:
+        self.UNK = '<<UNK>>'
+
+    def __getitem__(self, item: Any):
+        raise NotImplementedError('You need to implement the mapping operator...')
+
+
+class KeyToIdMapping(Mapping):
+    def __init__(self,
+                 keys: Union[List[str], Set[str]],
+                 include_unknown: bool=True) -> None:
+
+        super(KeyToIdMapping, self).__init__()
+        self.keys = [self.UNK] if include_unknown else []
+        self.keys += list(keys)
+        self.key_to_id = {key: i for i, key in enumerate(self.keys)}
+
+    def __getitem__(self, item: str) -> int:
+        if item in self.key_to_id:      return self.key_to_id[item]
+        if self.UNK in self.key_to_id:  return self.key_to_id[self.UNK]
+        raise KeyError('`{}` is not present in the mapping'.format(item))
+
+    def __len__(self) -> int:
+        return len(self.keys)
+
+    def __str__(self) -> str:
+        return str(self.key_to_id)
+
+
+class CharToIdMapping(KeyToIdMapping):
+    def __init__(self,
+                 text: Optional[str]=None,
+                 words: Optional[Union[List[str], Set[str]]]=None,
+                 chars: Optional[Set[str]]=None,
+                 include_unknown: bool=True) -> None:
+
+        if text is None and words is None and chars is None:
+            raise ValueError('Need to provide one of {text, words, chars}')
+
+        if chars is None:
+            chars = set()
+
+        if text is not None:
+            chars = chars.union(set(text))
+
+        if words is not None:
+            chars = set()
+            for word in set(words):
+                chars = chars.union(set(word))
+        super(CharToIdMapping, self).__init__(chars, include_unknown)
+
+
+class WordSegmentTypeToIdMapping(KeyToIdMapping):
+    def __init__(self,
+                 segments: Union[List[str], Set[str]],
+                 include_unknown: bool = True) -> None:
+        super(WordSegmentTypeToIdMapping, self).__init__(list(dict.fromkeys(segments)), include_unknown)
+
+
+class BMESToIdMapping(KeyToIdMapping):
+    def __init__(self) -> None:
+        super(BMESToIdMapping, self).__init__(['B', 'M', 'E', 'S'], False)
