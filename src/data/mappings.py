@@ -35,23 +35,20 @@ class CharToIdMapping(KeyToIdMapping):
     def __init__(self,
                  text: Optional[str]=None,
                  words: Optional[Union[List[str], Set[str]]]=None,
-                 chars: Optional[Set[str]]=None,
+                 chars: Optional[List[str]]=None,
                  include_unknown: bool=True) -> None:
 
         if text is None and words is None and chars is None:
             raise ValueError('Need to provide one of {text, words, chars}')
 
-        if chars is None:
-            chars = set()
-
+        chars = dict() if chars is None else dict.fromkeys(chars)
         if text is not None:
-            chars = chars.union(set(text))
+            chars.update(dict.fromkeys(text))
 
         if words is not None:
-            chars = set()
-            for word in set(words):
-                chars = chars.union(set(word))
-        super(CharToIdMapping, self).__init__(chars, include_unknown)
+            for word in dict.fromkeys(words).keys():
+                chars.update(dict.fromkeys(word))
+        super(CharToIdMapping, self).__init__(list(chars), include_unknown)
 
 
 class WordSegmentTypeToIdMapping(KeyToIdMapping):

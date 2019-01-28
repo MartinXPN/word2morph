@@ -9,12 +9,10 @@ class DataProcessor(object):
     def __init__(self,
                  char_mapping: CharToIdMapping,
                  word_segment_mapping: WordSegmentTypeToIdMapping,
-                 bmes_mapping: BMESToIdMapping,
-                 omit_types: bool=False) -> None:
+                 bmes_mapping: BMESToIdMapping) -> None:
         self.char_mapping = char_mapping
         self.word_segment_mapping = word_segment_mapping
         self.bmes_mapping = bmes_mapping
-        self.omit_types = omit_types
 
     def parse_one(self, sample: str) -> Tuple[np.array, np.array]:
         """
