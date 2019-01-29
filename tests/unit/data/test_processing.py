@@ -1,7 +1,5 @@
 from unittest import TestCase
 
-import numpy as np
-
 from src.data.mappings import CharToIdMapping, WordSegmentTypeToIdMapping, BMESToIdMapping
 from src.data.processing import DataProcessor
 
