@@ -32,3 +32,5 @@ class TestCNN(TestCase):
         x, y = self.processor.parse_one('одуматься	о:PREF/дум:ROOT/а:SUFF/ть:SUFF/ся:POSTFIX')
         pred = model.predict(np.array([x]))
         self.assertEqual(pred.shape, (1, 9, 25))
+        print(x.shape)
+        print(y.shape)
