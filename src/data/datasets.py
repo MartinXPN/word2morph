@@ -1,6 +1,6 @@
 import io
 import random
-from typing import List, Optional
+from typing import List, Optional, Set
 
 
 class Dataset(object):
@@ -29,6 +29,20 @@ class Dataset(object):
 
     def __getitem__(self, i: int) -> str:
         return self.data[i]
+
+    def get_chars(self) -> Set[str]:
+        chars = set()
+        for sample in self.data:
+            chars.update(sample.split('\t')[0])
+        return chars
+
+    def get_segment_types(self) -> Set[str]:
+        segments = set()
+        for sample in self.data:
+            parts = sample.split('\t')
+            if len(parts) != 1:
+                segments.update([item.split(':')[1] for item in parts[1].split('/')])
+        return segments
 
 
 class BucketDataset(Dataset):

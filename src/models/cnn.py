@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Tuple
 
 from keras import Model
 from keras.layers import Embedding, Input, Conv1D, Dropout, TimeDistributed, Dense
@@ -6,10 +6,10 @@ from keras.layers import Embedding, Input, Conv1D, Dropout, TimeDistributed, Den
 
 class CNNModel(Model):
     def __init__(self,
-                 nb_symbols: Optional[int]=None,
-                 embeddings_size: Optional[int]=None,
-                 kernel_sizes: Tuple[int]=(5, 5, 5),
-                 nb_filters: Tuple[int]=(192, 192, 192),
+                 nb_symbols: int=34,
+                 embeddings_size: int=8,
+                 kernel_sizes: Tuple[int, ...]=(5, 5, 5),
+                 nb_filters: Tuple[int, ...]=(192, 192, 192),
                  dense_output_units: int=0,
                  dropout: float=0.,
                  nb_classes: int=15,

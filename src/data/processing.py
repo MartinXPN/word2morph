@@ -47,7 +47,7 @@ class DataProcessor(object):
         assert len(x) == len(label)
         return np.array(x, dtype=np.int32), np.array(label, dtype=np.int32)
 
-    def parse(self, data: List[str]) -> Tuple[np.array, np.array]:
+    def parse(self, data: List[str], convert_one_hot: bool=True) -> Tuple[np.array, np.array]:
         inputs, labels = [], []
         for sample in data:
             x, y = self.parse_one(sample=sample)
@@ -57,5 +57,9 @@ class DataProcessor(object):
         inputs = pad_sequences(inputs, truncating='post')
         labels = pad_sequences(labels, truncating='post')
         assert inputs.shape == labels.shape
-        labels = np.eye(len(self.word_segment_mapping) * len(self.bmes_mapping))[labels]
+        if convert_one_hot:
+            labels = np.eye(self.nb_classes())[labels]
         return inputs, labels
+
+    def nb_classes(self) -> int:
+        return len(self.word_segment_mapping) * len(self.bmes_mapping)
