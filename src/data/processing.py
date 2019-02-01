@@ -1,6 +1,7 @@
 from typing import Tuple, List
 
 import numpy as np
+from keras_preprocessing.sequence import pad_sequences
 
 from .mappings import CharToIdMapping, WordSegmentTypeToIdMapping, BMESToIdMapping
 
@@ -20,8 +21,8 @@ class DataProcessor(object):
         :return: valid tuple X, Y that can be passed to the network input
         """
 
-        def segment_to_label(segment: str, segment_type: str) -> int:
-            return len(self.word_segment_mapping) * self.bmes_mapping[segment] + self.word_segment_mapping[segment_type]
+        def segment_to_label(seg: str, seg_type: str) -> int:
+            return len(self.word_segment_mapping) * self.bmes_mapping[seg] + self.word_segment_mapping[seg_type]
 
         [x, y] = sample.split('\t')
         x = [self.char_mapping[c] for c in x]
@@ -47,4 +48,13 @@ class DataProcessor(object):
         return np.array(x, dtype=np.int32), np.array(label, dtype=np.int32)
 
     def parse(self, data: List[str]) -> Tuple[np.array, np.array]:
-        pass
+        inputs, labels = [], []
+        for sample in data:
+            x, y = self.parse_one(sample=sample)
+            inputs.append(x)
+            labels.append(y)
+
+        inputs = pad_sequences(inputs, truncating='post')
+        labels = pad_sequences(labels, truncating='post')
+        assert inputs.shape == labels.shape
+        return inputs, labels
