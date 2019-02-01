@@ -57,4 +57,5 @@ class DataProcessor(object):
         inputs = pad_sequences(inputs, truncating='post')
         labels = pad_sequences(labels, truncating='post')
         assert inputs.shape == labels.shape
+        labels = np.eye(len(self.word_segment_mapping) * len(self.bmes_mapping))[labels]
         return inputs, labels

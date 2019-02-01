@@ -1,3 +1,4 @@
+import io
 import random
 from typing import List, Optional
 
@@ -17,8 +18,8 @@ class Dataset(object):
 
     @staticmethod
     def load_data(file_path: str) -> List[str]:
-        with open(file_path) as f:
-            return f.readlines()
+        with io.open(file_path, 'r', encoding='utf-8') as f:
+            return f.read().splitlines()
 
     def __len__(self) -> int:
         return len(self.data)
@@ -42,12 +43,15 @@ class BucketDataset(Dataset):
             if length not in self.buckets:
                 self.buckets[length] = []
             self.buckets[length].append(sample)
+        self.reorder_buckets()
 
     def shuffle(self) -> None:
         for key in self.buckets:
             random.shuffle(self.buckets[key])
+        self.reorder_buckets()
 
-        ''' Change the order of data to be consistent with buckets '''
+    def reorder_buckets(self):
+        """ Change the order of data to be consistent with buckets """
         data = []
         for bucket_length in sorted(self.buckets.keys()):
             data += self.buckets[bucket_length]
