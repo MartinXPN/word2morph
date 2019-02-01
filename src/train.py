@@ -74,15 +74,14 @@ class Gym(object):
 
         self.model.fit_generator(
             generator=DataGenerator(dataset=self.train_dataset, processor=self.processor, batch_size=batch_size),
+            steps_per_epoch=len(self.train_dataset) // batch_size,
             validation_data=DataGenerator(dataset=self.valid_dataset, processor=self.processor, batch_size=batch_size),
-            validation_steps=100,
-            steps_per_epoch=len(self.train_dataset) // batch_size, epochs=epochs,
-            callbacks=[  # AllMetrics(valid_data[:-1], valid_data[-1]),
-                TensorBoard(log_dir=log_dir),
-                ModelCheckpoint(filepath=os.path.join(models_dir, 'model-{epoch:02d}-loss-{val_loss:.2f}.hdf5'),
-                                monitor='val_loss', save_best_only=True, verbose=1, mode='max'),
-                EarlyStopping(patience=patience)
-            ],
+            validation_steps=len(self.valid_dataset) // batch_size,
+            epochs=epochs,
+            callbacks=[TensorBoard(log_dir=log_dir),
+                       ModelCheckpoint(filepath=os.path.join(models_dir, 'model-{epoch:02d}-loss-{val_loss:.2f}.hdf5'),
+                                       monitor='val_loss', save_best_only=True, verbose=1, mode='max'),
+                       EarlyStopping(patience=patience)],
             # class_weight=class_weights,
         )
 
