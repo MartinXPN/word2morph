@@ -1,11 +1,13 @@
 import os
 import random
-from typing import Tuple
+from itertools import chain
+from typing import Tuple, Dict
 
 import fire
 import numpy as np
 from keras import Model
 from keras.callbacks import ModelCheckpoint, TensorBoard, EarlyStopping
+from sklearn.utils import class_weight
 
 from src.data.datasets import BucketDataset, Dataset
 from src.data.generators import DataGenerator
@@ -23,6 +25,7 @@ class Gym(object):
         self.word_mapping: WordSegmentTypeToIdMapping = None
         self.bmes_mapping: BMESToIdMapping = None
         self.processor: DataProcessor = None
+        self.class_weights: Dict = None
 
     def fix_random_seed(self, seed: int):
         """ Fix random seed for reproducibility """
@@ -49,6 +52,11 @@ class Gym(object):
         self.processor = DataProcessor(char_mapping=self.char_mapping,
                                        word_segment_mapping=self.word_mapping,
                                        bmes_mapping=self.bmes_mapping)
+
+        labels = list(chain.from_iterable([self.processor.parse_one(sample)[1] for sample in self.train_dataset]))
+        labels = np.array(labels, dtype=np.int8)
+        self.class_weights = class_weight.compute_class_weight('balanced', np.unique(labels), labels)
+        print('Calculated class weights:', self.class_weights)
         return self
 
     def construct_model(self, embeddings_size: int=8,
@@ -82,7 +90,7 @@ class Gym(object):
                        ModelCheckpoint(filepath=os.path.join(models_dir, 'model-{epoch:02d}-loss-{val_loss:.2f}.hdf5'),
                                        monitor='val_loss', save_best_only=True, verbose=1, mode='max'),
                        EarlyStopping(patience=patience)],
-            # class_weight=class_weights,
+            class_weight=self.class_weights,
         )
 
 
