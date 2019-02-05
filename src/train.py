@@ -76,8 +76,7 @@ class Gym(object):
         self.model.summary()
         return self
 
-    def train(self,
-              batch_size: int = 32, epochs: int = 100, patience: int = 10,
+    def train(self, batch_size: int = 32, epochs: int = 100, patience: int = 10,
               log_dir: str = 'checkpoints', models_dir: str = 'checkpoints'):
 
         self.model.fit_generator(
