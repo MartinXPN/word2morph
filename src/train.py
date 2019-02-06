@@ -1,3 +1,4 @@
+import inspect
 import os
 import random
 from itertools import chain
@@ -91,6 +92,16 @@ class Gym(object):
                        EarlyStopping(patience=patience)],
             class_weight=self.class_weights,
         )
+
+    def run(self, **kwargs: Dict):
+        def map_arguments(func, parameters: Dict) -> Dict:
+            arguments = inspect.signature(func).parameters
+            return {arg: parameters[arg] if arg in parameters else arguments[arg] for arg in arguments.keys()}
+
+        self.fix_random_seed(**map_arguments(self.fix_random_seed, kwargs)) \
+            .init_data(**map_arguments(self.init_data, kwargs)) \
+            .construct_model(**map_arguments(self.construct_model, kwargs)) \
+            .train(**map_arguments(self.train, kwargs))
 
 
 if __name__ == '__main__':
