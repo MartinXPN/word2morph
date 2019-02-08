@@ -15,6 +15,7 @@ from src.data.mappings import CharToIdMapping, WordSegmentTypeToIdMapping, BMEST
 from src.data.processing import DataProcessor
 from src.models.cnn import CNNModel
 from src.util.args import map_arguments
+from src.util.metrics import AllMetrics
 
 
 class Gym(object):
@@ -80,13 +81,14 @@ class Gym(object):
     def train(self, batch_size: int = 32, epochs: int = 100, patience: int = 10,
               log_dir: str = 'logs', models_dir: str = 'checkpoints'):
 
+        valid_inputs, valid_labels = self.processor.parse(data=self.valid_dataset.data, convert_one_hot=True)
+
         history = self.model.fit_generator(
             generator=DataGenerator(dataset=self.train_dataset, processor=self.processor, batch_size=batch_size),
             steps_per_epoch=len(self.train_dataset) // batch_size,
-            validation_data=DataGenerator(dataset=self.valid_dataset, processor=self.processor, batch_size=batch_size),
-            validation_steps=len(self.valid_dataset) // batch_size,
             epochs=epochs,
-            callbacks=[TensorBoard(log_dir=log_dir),
+            callbacks=[AllMetrics(inputs=valid_inputs, labels=valid_labels),
+                       TensorBoard(log_dir=log_dir),
                        ModelCheckpoint(filepath=os.path.join(models_dir, 'model-{epoch:02d}-loss-{val_loss:.2f}.hdf5'),
                                        monitor='val_loss', save_best_only=True, verbose=1, mode='max'),
                        EarlyStopping(patience=patience)],
