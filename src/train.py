@@ -1,4 +1,3 @@
-import inspect
 import os
 import random
 from itertools import chain
@@ -15,6 +14,7 @@ from src.data.generators import DataGenerator
 from src.data.mappings import CharToIdMapping, WordSegmentTypeToIdMapping, BMESToIdMapping
 from src.data.processing import DataProcessor
 from src.models.cnn import CNNModel
+from src.util.args import map_arguments
 
 
 class Gym(object):
@@ -78,9 +78,9 @@ class Gym(object):
         return self
 
     def train(self, batch_size: int = 32, epochs: int = 100, patience: int = 10,
-              log_dir: str = 'checkpoints', models_dir: str = 'checkpoints'):
+              log_dir: str = 'logs', models_dir: str = 'checkpoints'):
 
-        self.model.fit_generator(
+        history = self.model.fit_generator(
             generator=DataGenerator(dataset=self.train_dataset, processor=self.processor, batch_size=batch_size),
             steps_per_epoch=len(self.train_dataset) // batch_size,
             validation_data=DataGenerator(dataset=self.valid_dataset, processor=self.processor, batch_size=batch_size),
@@ -92,11 +92,9 @@ class Gym(object):
                        EarlyStopping(patience=patience)],
             class_weight=self.class_weights,
         )
+        return history.history
 
     def run(self, **kwargs: Dict):
-        def map_arguments(func, parameters: Dict) -> Dict:
-            arguments = inspect.signature(func).parameters
-            return {arg: parameters[arg] if arg in parameters else arguments[arg] for arg in arguments.keys()}
 
         self.fix_random_seed(**map_arguments(self.fix_random_seed, kwargs)) \
             .init_data(**map_arguments(self.init_data, kwargs)) \

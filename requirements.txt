@@ -1,5 +1,6 @@
 absl-py==0.7.0
 astor==0.7.1
+baytune==0.2.4
 fire==0.1.3
 gast==0.2.2
 grpcio==1.18.0
