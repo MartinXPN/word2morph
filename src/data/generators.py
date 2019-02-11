@@ -39,3 +39,6 @@ class DataGenerator(object):
 
     def __iter__(self):
         return self
+
+    def __len__(self) -> int:
+        return len(self.dataset) // self.batch_size

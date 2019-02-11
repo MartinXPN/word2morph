@@ -1,71 +1,82 @@
+from pprint import pprint
+from typing import Tuple, List
+
 import numpy as np
-from keras import backend as K
 from keras.callbacks import Callback
-from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_score, accuracy_score, log_loss
+from sklearn.metrics import (confusion_matrix, precision_score, recall_score, f1_score,
+                             accuracy_score, log_loss, roc_auc_score)
+from sklearn.preprocessing import LabelBinarizer
+
+from src.data.generators import DataGenerator
 
 
-def precision(y_true, y_pred):
-    """Precision metric.
-    Only computes a batch-wise average of precision.
-    Computes the precision, a metric for multi-label classification of
-    how many selected items are relevant.
-    """
-    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-    predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
-    return true_positives / (predicted_positives + K.epsilon())
+def multi_class_roc_auc_score(y_test, y_pred, average="macro"):
+    lb = LabelBinarizer()
+    lb.fit(y_test)
+    y_test = lb.transform(y_test)
+    y_pred = lb.transform(y_pred)
+    return roc_auc_score(y_test, y_pred, average=average)
 
 
-def recall(y_true, y_pred):
-    """Recall metric.
-    Only computes a batch-wise average of recall.
-    Computes the recall, a metric for multi-label classification of
-    how many relevant items are selected.
-    """
-    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
-    return true_positives / (possible_positives + K.epsilon())
+class Evaluate(Callback):
+    # TODO -> evaluate before correcting the predictions and evaluate after to see the difference
+    def __init__(self, data_generator: DataGenerator):
+        super(Evaluate, self).__init__()
+        self.data_generator = data_generator
 
+    def evaluate(self,
+                 predictions: List[np.ndarray],
+                 labels: List[np.ndarray]) -> Tuple[np.ndarray, Tuple[Tuple[str, float], ...]]:
+        """
+        Calculates:
+         * word-level accuracy
+         * char-level metrics: acc, loss, precision, recall, f1, auc, confusion matrix
+        :return confusion_matrix, (word_acc, acc, loss, precision, recall, f1, auc)
+        """
 
-def f1(y_true, y_pred):
-    p = precision(y_true, y_pred)
-    r = recall(y_true, y_pred)
-    return 2 * ((p * r) / (p + r))
+        ''' Calculate word-level accuracy '''
+        correct = 0
+        nb_words = 0
+        for batch_prediction, batch_label in zip(predictions, labels):
+            correct += sum([np.array_equal(word_prediction, word_label)
+                            for word_prediction, word_label in zip(batch_prediction, batch_label)])
+            nb_words += len(batch_label)
 
+        ''' Calculate char-level metrics '''
+        char_predictions = []
+        char_labels = []
+        for batch_prediction, batch_label in zip(predictions, labels):
+            for word_prediction, word_label in zip(batch_prediction, batch_label):
+                char_predictions += word_prediction.tolist()
+                char_labels += word_label.tolist()
 
-class AllMetrics(Callback):
-    def __init__(self, inputs, labels):
-        super(AllMetrics, self).__init__()
-        self.inputs = inputs
-        self.labels = labels
-        self.accuracy = None
-        self.loss = None
-        self.confusion_matrix = None
-        self.precision = None
-        self.recall = None
-        self.f1 = None
+        char_predictions = np.array(char_predictions)
+        char_labels = np.array(char_labels)
+
+        t, p = np.argmax(char_labels, axis=1), np.argmax(char_predictions, axis=1)
+        return confusion_matrix(t, p), tuple([('word_acc', correct / nb_words),
+                                              ('acc', accuracy_score(t, p)),
+                                              ('loss', log_loss(char_labels, char_predictions)),
+                                              ('precision', precision_score(t, p, average='macro')),
+                                              ('recall', recall_score(t, p, average='macro')),
+                                              ('f1', f1_score(t, p, average='macro')),
+                                              ('auc', multi_class_roc_auc_score(t, p))])
 
     def on_epoch_end(self, epoch, logs=None):
         logs = logs or {}
-        predictions = self.model.predict(self.inputs)
-        t, p = np.argmax(self.labels, axis=1), np.argmax(predictions, axis=1)
 
-        self.accuracy = accuracy_score(t, p)
-        self.loss = log_loss(self.labels, predictions)
-        self.confusion_matrix = confusion_matrix(t, p)
-        self.precision = precision_score(t, p)
-        self.recall = recall_score(t, p)
-        self.f1 = f1_score(t, p)
+        epoch_labels = []
+        epoch_predictions = []
+        for i in range(len(self.data_generator)):
+            inputs, labels = next(self.data_generator)
+            predictions = self.model.predict(inputs)
+            epoch_labels.append(labels)
+            epoch_predictions.append(predictions)
 
-        logs['val_acc'] = self.accuracy
-        logs['val_loss'] = self.loss
-        logs['val_precision'] = self.precision
-        logs['val_recall'] = self.recall
-        logs['val_f1'] = self.f1
+        cf_matrix, metrics = self.evaluate(predictions=epoch_predictions, labels=epoch_labels)
+        for metric_name, metric_value in metrics:
+            logs['val_' + metric_name] = metric_value
 
         print('\nEvaluating for epoch {}...'.format(epoch + 1))
-        print('Confusion Matrix:\n', self.confusion_matrix)
-        print('Accuracy: {:.4f}'.format(self.accuracy))
-        print('Loss: {:.4f}'.format(self.loss))
-        print('Precision: {:.4f}'.format(self.precision))
-        print('Recall: {:.4f}'.format(self.recall))
-        print('F-score: {:.4f}'.format(self.f1))
+        print('Confusion Matrix:\n', cf_matrix)
+        pprint(logs)

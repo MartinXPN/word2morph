@@ -1,6 +1,5 @@
-import copy
-
 import fire
+import numpy as np
 from btb import HyperParameter, ParamTypes
 from btb.hyper_parameter import CatHyperParameter
 from btb.selection import UCB1
@@ -27,8 +26,8 @@ class HyperparameterSearchGym(Gym):
         self.tuners = {
             'CNN': GP([
                 ('embeddings_size',     HyperParameter(ParamTypes.INT, [4, 32])),
-                ('kernel_sizes',        TupleHyperparameter(param_range=[(7, 7, 7, 7),      (5, 5, 5, 5),       (3, 3, 3, 3),       (5, 5, 3, 3),   (7, 5, 5, 3, 3)])),
-                ('nb_filters',          TupleHyperparameter(param_range=[(192, 192, 192),   (32, 64, 128, 256), (64, 64, 128, 128), (64, 128, 256)])),
+                ('kernel_sizes',        TupleHyperparameter(param_range=[(7, 7, 7, 7),      (5, 5, 5, 5),       (3, 3, 3, 3),       (5, 5, 3, 3),   (7, 5, 5, 3)])),
+                ('nb_filters',          TupleHyperparameter(param_range=[(192, 192, 192),   (64, 128, 256),     (32, 64, 128, 256), (64, 64, 128, 128)])),
                 ('dense_output_units',  HyperParameter(ParamTypes.INT, [16, 256])),
                 ('dropout',             HyperParameter(ParamTypes.FLOAT, [0., 0.6])),
                 ('batch_size',          HyperParameter(ParamTypes.INT, [4, 512])),
@@ -45,14 +44,16 @@ class HyperparameterSearchGym(Gym):
         for trial in range(nb_trials):
             model_choice = self.selector.select({'CNN': self.tuners['CNN'].y})
             parameters = self.tuners[model_choice].propose()
-            print('\n\n\nTraining the model: {} with hyperparameters: {}'.format(model_choice, parameters))
 
             ''' Construct and train the model with the selected parameters '''
-            self.construct_model(**map_arguments(self.construct_model, parameters))
-            transformed_params = copy.deepcopy(parameters)
+            transformed_params = {key: tuple(value.tolist()) if isinstance(value, np.ndarray) else value
+                                  for key, value in parameters.items()}
             transformed_params.update(epochs=epochs, patience=patience, log_dir=log_dir, models_dir=models_dir)
+
+            print('\n\n\nTraining the model: {} with hyperparameters: {}'.format(model_choice, transformed_params))
+            self.construct_model(**map_arguments(self.construct_model, transformed_params))
             history = self.train(**map_arguments(self.train, transformed_params))
-            self.tuners[model_choice].add(parameters, history['val_acc'][-1])
+            self.tuners[model_choice].add(transformed_params, history['val_acc'][-1])
 
 
 if __name__ == '__main__':
