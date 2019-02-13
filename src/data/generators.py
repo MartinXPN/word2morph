@@ -2,7 +2,7 @@ from typing import Tuple
 
 import numpy as np
 
-from src.data.datasets import Dataset
+from src.entities.dataset import Dataset
 from .processing import DataProcessor
 
 
@@ -19,7 +19,7 @@ class DataGenerator(object):
 
         self.batch_start = len(dataset)
 
-    def __next__(self) -> Tuple[np.array, np.array]:
+    def __next__(self) -> Tuple[np.ndarray, np.ndarray]:
         """ Generates a new batch of data """
 
         ''' Start a new epoch '''
@@ -34,7 +34,7 @@ class DataGenerator(object):
         self.batch_start += self.batch_size
         return self.processor.parse(data=batch)
 
-    def next(self) -> Tuple[np.array, np.array]:
+    def next(self) -> Tuple[np.ndarray, np.ndarray]:
         return self.__next__()
 
     def __iter__(self):

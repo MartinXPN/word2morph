@@ -2,6 +2,7 @@ from unittest import TestCase
 
 import numpy as np
 
+from src.data.loaders import DataLoader
 from src.data.mappings import CharToIdMapping, WordSegmentTypeToIdMapping, BMESToIdMapping
 from src.data.processing import DataProcessor
 from src.models.cnn import CNNModel
@@ -29,7 +30,8 @@ class TestCNN(TestCase):
         model.summary()
         model.compile('adam', 'sparse_categorical_crossentropy', metrics=['acc'])
 
-        x, y = self.processor.parse_one('одуматься	о:PREF/дум:ROOT/а:SUFF/ть:SUFF/ся:POSTFIX')
+        loader = DataLoader(samples=['одуматься	о:PREF/дум:ROOT/а:SUFF/ть:SUFF/ся:POSTFIX'])
+        x, y = self.processor.parse_one(sample=loader.load()[0])
         pred = model.predict(np.array([x]))
         self.assertEqual(pred.shape, (1, 9, 25))
         print(x.shape)

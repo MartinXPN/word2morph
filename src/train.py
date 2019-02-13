@@ -9,7 +9,8 @@ from keras import Model
 from keras.callbacks import ModelCheckpoint, TensorBoard, EarlyStopping
 from sklearn.utils import class_weight
 
-from src.data.datasets import BucketDataset, Dataset
+from src.data.loaders import DataLoader
+from src.entities.dataset import BucketDataset, Dataset
 from src.data.generators import DataGenerator
 from src.data.mappings import CharToIdMapping, WordSegmentTypeToIdMapping, BMESToIdMapping
 from src.data.processing import DataProcessor
@@ -41,8 +42,8 @@ class Gym(object):
         return self
 
     def init_data(self, train_path: str = 'datasets/rus.train', valid_path: str = 'datasets/rus.dev'):
-        self.train_dataset = BucketDataset(file_path=train_path)
-        self.valid_dataset = BucketDataset(file_path=valid_path)
+        self.train_dataset = BucketDataset(samples=DataLoader(file_path=train_path).load())
+        self.valid_dataset = BucketDataset(samples=DataLoader(file_path=valid_path).load())
 
         self.bmes_mapping = BMESToIdMapping()
         self.char_mapping = CharToIdMapping(chars=list(self.train_dataset.get_chars()), include_unknown=True)
@@ -90,14 +91,13 @@ class Gym(object):
                                                              batch_size=batch_size)),
                        TensorBoard(log_dir=log_dir),
                        ModelCheckpoint(filepath=os.path.join(models_dir, 'model-{epoch:02d}-loss-{val_loss:.2f}.hdf5'),
-                                       monitor='val_loss', save_best_only=True, verbose=1, mode='max'),
+                                       monitor='val_loss', save_best_only=True, verbose=1, mode='min'),
                        EarlyStopping(patience=patience)],
             class_weight=self.class_weights,
         )
         return history.history
 
     def run(self, **kwargs: Dict):
-
         self.fix_random_seed(**map_arguments(self.fix_random_seed, kwargs)) \
             .init_data(**map_arguments(self.init_data, kwargs)) \
             .construct_model(**map_arguments(self.construct_model, kwargs)) \

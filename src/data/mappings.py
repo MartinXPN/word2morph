@@ -2,7 +2,7 @@ from typing import Any, List, Set, Union, Optional
 
 
 class Mapping(object):
-    def __init__(self) -> None:
+    def __init__(self):
         self.UNK = '<<UNK>>'
 
     def __getitem__(self, item: Any):
@@ -12,7 +12,7 @@ class Mapping(object):
 class KeyToIdMapping(Mapping):
     def __init__(self,
                  keys: Union[List[str], Set[str]],
-                 include_unknown: bool=True) -> None:
+                 include_unknown: bool=True):
 
         super(KeyToIdMapping, self).__init__()
         self.keys = [self.UNK] if include_unknown else []
@@ -36,7 +36,7 @@ class CharToIdMapping(KeyToIdMapping):
                  text: Optional[str]=None,
                  words: Optional[Union[List[str], Set[str]]]=None,
                  chars: Optional[List[str]]=None,
-                 include_unknown: bool=True) -> None:
+                 include_unknown: bool=True):
 
         if text is None and words is None and chars is None:
             raise ValueError('Need to provide one of {text, words, chars}')
@@ -54,10 +54,10 @@ class CharToIdMapping(KeyToIdMapping):
 class WordSegmentTypeToIdMapping(KeyToIdMapping):
     def __init__(self,
                  segments: Union[List[str], Set[str]],
-                 include_unknown: bool = True) -> None:
+                 include_unknown: bool = True):
         super(WordSegmentTypeToIdMapping, self).__init__(list(dict.fromkeys(segments)), include_unknown)
 
 
 class BMESToIdMapping(KeyToIdMapping):
-    def __init__(self) -> None:
+    def __init__(self):
         super(BMESToIdMapping, self).__init__(['B', 'M', 'E', 'S'], False)
