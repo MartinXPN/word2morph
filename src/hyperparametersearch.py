@@ -32,10 +32,13 @@ class HyperparameterSearchGym(Gym):
                 ('dropout',             HyperParameter(ParamTypes.FLOAT, [0., 0.6])),
                 ('batch_size',          HyperParameter(ParamTypes.INT, [4, 512])),
             ]),
-            # 'RNN': GP([
-            #     ('embeddings_size',     HyperParameter(ParamTypes.INT, [4, 64])),
-            #     ('dropout',             HyperParameter(ParamTypes.FLOAT, [0., 0.6])),
-            # ])
+            'RNN': GP([
+                ('embeddings_size',     HyperParameter(ParamTypes.INT, [4, 64])),
+                ('recurrent_units',     TupleHyperparameter(param_range=[(32, 64, 64), (32, 64, 128), (64, 64, 128), (64, 128, 256), (128, 128), (256, 256)])),
+                ('dense_output_units',  HyperParameter(ParamTypes.INT, [16, 256])),
+                ('dropout',             HyperParameter(ParamTypes.FLOAT, [0., 0.6])),
+                ('batch_size',          HyperParameter(ParamTypes.INT, [4, 512])),
+            ])
         }
         self.selector = UCB1(list(self.tuners.keys()))
 
@@ -48,7 +51,9 @@ class HyperparameterSearchGym(Gym):
             ''' Construct and train the model with the selected parameters '''
             transformed_params = {key: tuple(value.tolist()) if isinstance(value, np.ndarray) else value
                                   for key, value in parameters.items()}
-            transformed_params.update(epochs=epochs, patience=patience, log_dir=log_dir, models_dir=models_dir)
+            transformed_params.update(model_type=model_choice,
+                                      epochs=epochs, patience=patience,
+                                      log_dir=log_dir, models_dir=models_dir)
 
             print('\n\n\nTraining the model: {} with hyperparameters: {}'.format(model_choice, transformed_params))
             self.construct_model(**map_arguments(self.construct_model, transformed_params))
