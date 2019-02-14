@@ -27,8 +27,8 @@ class CNNModel(Model):
             x = Dropout(dropout)(x)
         x = Conv1D(nb_filters[-1], kernel_sizes[-1], activation="relu", padding="same")(x)
 
-        output = TimeDistributed(Dense(dense_output_units, activation="relu"), name="pre_output")(x) \
+        x = TimeDistributed(Dense(dense_output_units, activation="relu"), name="pre_output")(x) \
             if dense_output_units else x
 
-        output = TimeDistributed(Dense(nb_classes, activation="softmax"), name="output")(output)
+        output = TimeDistributed(Dense(nb_classes, activation="softmax"), name="output")(x)
         super(CNNModel, self).__init__(inputs=[net_input], outputs=[output], name=name)

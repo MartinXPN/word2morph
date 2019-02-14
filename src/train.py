@@ -7,6 +7,7 @@ import fire
 import numpy as np
 from keras import Model
 from keras.callbacks import ModelCheckpoint, TensorBoard, EarlyStopping
+from keras.optimizers import Adam
 from sklearn.utils import class_weight
 
 from src.data.loaders import DataLoader
@@ -15,6 +16,7 @@ from src.data.generators import DataGenerator
 from src.data.mappings import CharToIdMapping, WordSegmentTypeToIdMapping, BMESToIdMapping
 from src.data.processing import DataProcessor
 from src.models.cnn import CNNModel
+from src.models.rnn import RNNModel
 from src.util.args import map_arguments
 from src.util.metrics import Evaluate
 
@@ -62,20 +64,34 @@ class Gym(object):
         print('Calculated class weights:', self.class_weights)
         return self
 
-    def construct_model(self, embeddings_size: int=8,
+    def construct_model(self,
+                        model_type: str = 'CNN',
+                        embeddings_size: int=8,
                         kernel_sizes: Tuple[int, ...]=(5, 5, 5),
                         nb_filters: Tuple[int, ...]=(192, 192, 192),
+                        recurrent_units: Tuple[int, ...] = (64, 128, 256),
                         dense_output_units: int=64,
                         dropout: float=0.2):
-        self.model = CNNModel(nb_symbols=len(self.char_mapping),
-                              embeddings_size=embeddings_size,
-                              kernel_sizes=kernel_sizes,
-                              nb_filters=nb_filters,
-                              dense_output_units=dense_output_units,
-                              dropout=dropout,
-                              nb_classes=self.processor.nb_classes())
+        model_type = model_type.upper()
+        if model_type == 'CNN':
+            self.model = CNNModel(nb_symbols=len(self.char_mapping),
+                                  embeddings_size=embeddings_size,
+                                  kernel_sizes=kernel_sizes,
+                                  nb_filters=nb_filters,
+                                  dense_output_units=dense_output_units,
+                                  dropout=dropout,
+                                  nb_classes=self.processor.nb_classes())
+        elif model_type == 'RNN':
+            self.model = RNNModel(nb_symbols=len(self.char_mapping),
+                                  embeddings_size=embeddings_size,
+                                  recurrent_units=recurrent_units,
+                                  dense_output_units=dense_output_units,
+                                  dropout=dropout,
+                                  nb_classes=self.processor.nb_classes())
+        else:
+            raise ValueError('Cannot find implementation for the model type {}'.format(model_type))
 
-        self.model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['acc'])
+        self.model.compile(optimizer=Adam(), loss='categorical_crossentropy')
         self.model.summary()
         return self
 
