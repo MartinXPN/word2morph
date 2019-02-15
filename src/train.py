@@ -1,5 +1,7 @@
 import os
 import random
+import sys
+from datetime import datetime
 from itertools import chain
 from typing import Tuple, Dict
 
@@ -95,8 +97,14 @@ class Gym(object):
         self.model.summary()
         return self
 
-    def train(self, batch_size: int = 32, epochs: int = 100, patience: int = 10,
-              log_dir: str = 'logs', models_dir: str = 'checkpoints'):
+    def train(self, batch_size: int = 32, epochs: int = 100, patience: int = 10, log_dir: str = 'logs'):
+
+        log_dir = os.path.join(log_dir, datetime.now().replace(microsecond=0).isoformat())
+        models_dir = os.path.join(log_dir, 'checkpoints/')
+        commandline_path = os.path.join(log_dir, 'commandline.txt')
+        os.makedirs(os.path.dirname(commandline_path))
+        os.makedirs(models_dir)
+        np.savetxt(fname=commandline_path, X=sys.argv, fmt='%s')
 
         history = self.model.fit_generator(
             generator=DataGenerator(dataset=self.train_dataset, processor=self.processor, batch_size=batch_size),
@@ -106,7 +114,7 @@ class Gym(object):
                                                              processor=self.processor,
                                                              batch_size=batch_size)),
                        TensorBoard(log_dir=log_dir),
-                       ModelCheckpoint(filepath=os.path.join(models_dir, 'model-{epoch:02d}-loss-{val_loss:.2f}.hdf5'),
+                       ModelCheckpoint(filepath=os.path.join(models_dir, '{epoch:02d}-loss-{val_loss:.2f}.hdf5'),
                                        monitor='val_loss', save_best_only=True, verbose=1, mode='min'),
                        EarlyStopping(patience=patience)],
             class_weight=self.class_weights,
