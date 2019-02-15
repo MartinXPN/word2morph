@@ -5,7 +5,7 @@ from src.data.processing import DataProcessor
 from src.entities.sample import Sample, Segment
 
 
-class TestPreprocessing(TestCase):
+class TestPreProcessing(TestCase):
 
     def test_processing(self):
         char_mapping = CharToIdMapping(text='одуматься', include_unknown=True)
@@ -50,3 +50,8 @@ class TestPreprocessing(TestCase):
         print(x, y)
         self.assertListEqual(list(x), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         self.assertListEqual(list(y), [0, 2, 3, 3, 3, 0, 1, 2, 0, 2])
+
+
+class TestPostProcessing(TestCase):
+    def test_prediction_to_sample(self):
+        pass

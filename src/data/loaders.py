@@ -5,6 +5,9 @@ from src.entities.sample import Sample, Segment
 
 
 class DataLoader(object):
+    """
+    Loads string/file data into Sample or list of Samples
+    """
     def __init__(self,
                  file_path: Optional[str] = None,
                  samples: Optional[List[str]] = None):
@@ -21,12 +24,12 @@ class DataLoader(object):
 
     @staticmethod
     def load_file(file_path: str) -> List[str]:
-        # `упасти	у:PREF/пас:ROOT/ти:SUFF`
         with io.open(file_path, 'r', encoding='utf-8') as f:
             return f.read().splitlines()
 
     @staticmethod
     def parse_one(item: str) -> Sample:
+        # `упасти	у:PREF/пас:ROOT/ти:SUFF`
         [word, label] = item.split('\t')
         segments = []
         for word_segment in label.split('/'):
