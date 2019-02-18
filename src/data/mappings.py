@@ -19,6 +19,9 @@ class KeyToIdMapping(Mapping):
         self.keys += list(keys)
         self.key_to_id = {key: i for i, key in enumerate(self.keys)}
 
+    def get(self, key_id):
+        return self.keys[key_id]
+
     def __getitem__(self, item: Union[str, int]) -> int:
         if item in self.key_to_id:      return self.key_to_id[item]
         if self.UNK in self.key_to_id:  return self.key_to_id[self.UNK]

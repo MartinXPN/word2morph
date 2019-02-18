@@ -75,11 +75,8 @@ class DataProcessor(object):
     def to_sample(self, word: str, prediction: np.ndarray) -> Sample:
         """
         :param word: input word (needed so that this method could produce a valid Sample)
-        :param prediction: np.array with shape (nb_chars, nb_classes_per_char) -> (9, 25) or (classes,) -> (9,)
-                            for the first option the prediction should be the output of softmax
-                            for the second option the prediction should contain class_ids for each character
+        :param prediction: np.array with shape (nb_chars, nb_classes_per_char) -> (9, 25): the output of softmax
         :return: corresponding valid Sample from the prediction
         """
-        assert 1 <= len(prediction.shape) <= 2
-        classes = np.argmax(prediction, axis=1) if len(prediction.shape) == 2 else prediction
-        return Sample(word='asdf', segments=())
+        assert len(prediction.shape) == 2
+        return Sample(word=word, segments=())
