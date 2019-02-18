@@ -104,7 +104,7 @@ class DataProcessor(object):
 
                 single_best = np.argmax(single)
                 begin_best = np.argmax(begin)
-                if single_best > begin_best:
+                if max(single) > max(begin):
                     current_seg_type = self.word_segment_mapping.keys[single_best]
                     segments.append(Segment(word[current_seg_start: i+1], segment_type=current_seg_type))
                     current_seg_start = i + 1
@@ -113,8 +113,8 @@ class DataProcessor(object):
                     current_seg_type = self.word_segment_mapping.keys[begin_best]
                     current_seg = self.bmes_mapping.BEGIN
 
-            ''' Check for Mid or End for the current segment type '''
-            if current_seg in {self.bmes_mapping.BEGIN, self.bmes_mapping.MID}:
+                ''' Check for Mid or End for the current segment type '''
+            elif current_seg in {self.bmes_mapping.BEGIN, self.bmes_mapping.MID}:
                 if is_valid(self.bmes_mapping.END, current_seg_type) and \
                         prediction[i][self.segment_to_label(seg=self.bmes_mapping.END, seg_type=current_seg_type)] > \
                         prediction[i][self.segment_to_label(seg=self.bmes_mapping.MID, seg_type=current_seg_type)]:

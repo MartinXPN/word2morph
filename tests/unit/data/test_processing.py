@@ -55,7 +55,7 @@ class TestPreProcessing(TestCase):
 
 class TestPostProcessing(TestCase):
     def test_prediction_to_sample(self):
-        char_mapping = CharToIdMapping(text='одуматься', include_unknown=True)
+        char_mapping = CharToIdMapping(text='одуматься', include_unknown=False)
         word_mapping = WordSegmentTypeToIdMapping(segments=['PREF', 'ROOT', 'SUFF', 'POSTFIX'], include_unknown=False)
 
         print('Char mapping:', char_mapping)
@@ -80,3 +80,4 @@ class TestPostProcessing(TestCase):
         predicted_sample = processor.to_sample(word='одуматься', prediction=predictions)
         print(predicted_sample)
 
+        self.assertEqual(predicted_sample, s)
