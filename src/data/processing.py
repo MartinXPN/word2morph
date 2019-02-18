@@ -3,7 +3,7 @@ from typing import Tuple, List
 import numpy as np
 from keras_preprocessing.sequence import pad_sequences
 
-from src.entities.sample import Sample
+from src.entities.sample import Sample, Segment
 from .mappings import CharToIdMapping, WordSegmentTypeToIdMapping, BMESToIdMapping, LabelToIdMapping
 
 
@@ -23,18 +23,17 @@ class DataProcessor(object):
         self.bmes_mapping = bmes_mapping
         self.label_mapping = label_mapping
 
+    def segment_to_label(self, seg: str, seg_type: str) -> int:
+        res = len(self.word_segment_mapping) * self.bmes_mapping[seg] + self.word_segment_mapping[seg_type]
+        if self.label_mapping:
+            res = self.label_mapping[res]
+        return res
+
     def parse_one(self, sample: Sample) -> Tuple[np.ndarray, np.ndarray]:
         """
         :param sample: string of the format `упасти	у:PREF/пас:ROOT/ти:SUFF`
         :return: valid tuple X, Y that can be passed to the network input
         """
-
-        def segment_to_label(seg: str, seg_type: str) -> int:
-            res = len(self.word_segment_mapping) * self.bmes_mapping[seg] + self.word_segment_mapping[seg_type]
-            if self.label_mapping:
-                res = self.label_mapping[res]
-            return res
-
         x = [self.char_mapping[c] for c in sample.word]
         y = []
 
@@ -44,11 +43,11 @@ class DataProcessor(object):
 
             '''Map the word segment to BMES (Begin, Mid, End, Single) encoding '''
             if len(word_segment) == 1:  # Single
-                y.append(segment_to_label('S', segment_type))
+                y.append(self.segment_to_label(self.bmes_mapping.SINGLE, segment_type))
             else:  # Begin Mid Mid Mid Mid End
-                y.append(segment_to_label('B', segment_type))
-                y += [segment_to_label('M', segment_type) for _ in word_segment[1: -1]]
-                y.append(segment_to_label('E', segment_type))
+                y.append(self.segment_to_label(self.bmes_mapping.BEGIN, segment_type))
+                y += [self.segment_to_label(self.bmes_mapping.MID, segment_type) for _ in word_segment[1: -1]]
+                y.append(self.segment_to_label(self.bmes_mapping.END, segment_type))
 
         assert len(x) == len(y)
         return np.array(x, dtype=np.int32), np.array(y, dtype=np.int32)
@@ -74,9 +73,57 @@ class DataProcessor(object):
 
     def to_sample(self, word: str, prediction: np.ndarray) -> Sample:
         """
+        The current implementation is a simple greedy algorithm -> take max from all possible values for each position
         :param word: input word (needed so that this method could produce a valid Sample)
         :param prediction: np.array with shape (nb_chars, nb_classes_per_char) -> (9, 25): the output of softmax
         :return: corresponding valid Sample from the prediction
         """
+        def is_valid(seg: str, seg_type: str):
+            try:
+                self.segment_to_label(seg=seg, seg_type=seg_type)
+                return True
+            except KeyError:
+                return False
+
         assert len(prediction.shape) == 2
-        return Sample(word=word, segments=())
+        assert prediction.shape[0] == len(word) and prediction.shape[1] == self.nb_classes()
+        current_seg: str = None
+        current_seg_type: str = None
+        current_seg_start: int = 0
+        segments: List[Segment] = []
+
+        for i, c in enumerate(word):
+            ''' Check for Single or Begin for all segment types '''
+            if current_seg is None or current_seg in {self.bmes_mapping.END, self.bmes_mapping.SINGLE}:
+                single = [-1 if not is_valid(self.bmes_mapping.SINGLE, seg_type) else
+                          prediction[i][self.segment_to_label(seg=self.bmes_mapping.SINGLE, seg_type=seg_type)]
+                          for seg_type in self.word_segment_mapping.keys]
+                begin = [-1 if not is_valid(self.bmes_mapping.BEGIN, seg_type) else
+                         prediction[i][self.segment_to_label(seg=self.bmes_mapping.BEGIN, seg_type=seg_type)]
+                         for seg_type in self.word_segment_mapping.keys]
+
+                single_best = np.argmax(single)
+                begin_best = np.argmax(begin)
+                if single_best > begin_best:
+                    current_seg_type = self.word_segment_mapping.keys[single_best]
+                    segments.append(Segment(word[current_seg_start: i+1], segment_type=current_seg_type))
+                    current_seg_start = i + 1
+                    current_seg = self.bmes_mapping.SINGLE
+                else:
+                    current_seg_type = self.word_segment_mapping.keys[begin_best]
+                    current_seg = self.bmes_mapping.BEGIN
+
+            ''' Check for Mid or End for the current segment type '''
+            if current_seg in {self.bmes_mapping.BEGIN, self.bmes_mapping.MID}:
+                if is_valid(self.bmes_mapping.END, current_seg_type) and \
+                        prediction[i][self.segment_to_label(seg=self.bmes_mapping.END, seg_type=current_seg_type)] > \
+                        prediction[i][self.segment_to_label(seg=self.bmes_mapping.MID, seg_type=current_seg_type)]:
+                    segments.append(Segment(word[current_seg_start: i+1], segment_type=current_seg_type))
+                    current_seg_start = i + 1
+                    current_seg = self.bmes_mapping.END
+                else:
+                    current_seg = self.bmes_mapping.MID
+
+        if current_seg_start < len(word):
+            segments.append(Segment(word[current_seg_start:], segment_type=current_seg_type))
+        return Sample(word=word, segments=tuple(segments))

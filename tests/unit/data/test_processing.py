@@ -1,3 +1,4 @@
+import numpy as np
 from unittest import TestCase
 
 from src.data.mappings import CharToIdMapping, WordSegmentTypeToIdMapping, BMESToIdMapping
@@ -54,4 +55,28 @@ class TestPreProcessing(TestCase):
 
 class TestPostProcessing(TestCase):
     def test_prediction_to_sample(self):
-        pass
+        char_mapping = CharToIdMapping(text='одуматься', include_unknown=True)
+        word_mapping = WordSegmentTypeToIdMapping(segments=['PREF', 'ROOT', 'SUFF', 'POSTFIX'], include_unknown=False)
+
+        print('Char mapping:', char_mapping)
+        print('Word Segment type mapping:', word_mapping)
+
+        processor = DataProcessor(char_mapping=char_mapping,
+                                  word_segment_mapping=word_mapping,
+                                  bmes_mapping=BMESToIdMapping())
+
+        # 'одуматься	о:PREF/дум:ROOT/а:SUFF/ть:SUFF/ся:POSTFIX'
+        s = Sample(word='одуматься', segments=(Segment(segment='о', segment_type='PREF'),
+                                               Segment(segment='дум', segment_type='ROOT'),
+                                               Segment(segment='а', segment_type='SUFF'),
+                                               Segment(segment='ть', segment_type='SUFF'),
+                                               Segment(segment='ся', segment_type='POSTFIX')))
+        x, y = processor.parse_one(sample=s)
+        self.assertEqual(len(x), len(y))
+        print(x, y)
+
+        predictions = np.eye(processor.nb_classes())[y]
+        print(predictions)
+        predicted_sample = processor.to_sample(word='одуматься', prediction=predictions)
+        print(predicted_sample)
+

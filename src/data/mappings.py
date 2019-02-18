@@ -62,8 +62,9 @@ class WordSegmentTypeToIdMapping(KeyToIdMapping):
 
 
 class BMESToIdMapping(KeyToIdMapping):
-    def __init__(self):
-        super(BMESToIdMapping, self).__init__(['B', 'M', 'E', 'S'], False)
+    def __init__(self, begin='B', mid='M', end='E', single='S'):
+        self.BEGIN, self.MID, self.END, self.SINGLE = begin, mid, end, single
+        super(BMESToIdMapping, self).__init__([self.BEGIN, self.MID, self.END, self.SINGLE], False)
 
 
 class LabelToIdMapping(KeyToIdMapping):
