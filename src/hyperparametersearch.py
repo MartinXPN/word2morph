@@ -58,7 +58,7 @@ class HyperparameterSearchGym(Gym):
             print('\n\n\nTraining the model: {} with hyperparameters: {}'.format(model_choice, transformed_params))
             self.construct_model(**map_arguments(self.construct_model, transformed_params))
             history = self.train(**map_arguments(self.train, transformed_params))
-            self.tuners[model_choice].add(transformed_params, history['val_acc'][-1])
+            self.tuners[model_choice].add(transformed_params, max(history['val_acc']))
 
 
 if __name__ == '__main__':

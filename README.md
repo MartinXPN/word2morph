@@ -16,3 +16,10 @@ python src/hyperparametersearch.py
         init_data --train_path datasets/rus.train --valid_path datasets/rus.dev
         search_hyperparameters --nb_trials 50 --epochs 50 --patience 10 --log_dir logs --models_dir checkpoints
 ```
+
+### Predict on test data
+```commandline
+python src/predict.py
+        --model_path logs/<timestamp>/checkpoints/<modelname.hdf5> --processor_path logs/<timestamp>/processor.pkl
+        --batch_size 80 --input_path path_to_input.txt --output_path path_to_output.txt
+```
