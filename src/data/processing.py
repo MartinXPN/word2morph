@@ -86,7 +86,7 @@ class DataProcessor(object):
                 return False
 
         assert len(prediction.shape) == 2
-        assert prediction.shape[0] == len(word) and prediction.shape[1] == self.nb_classes()
+        assert prediction.shape[0] >= len(word) and prediction.shape[1] == self.nb_classes()
         current_seg: str = None
         current_seg_type: str = None
         current_seg_start: int = 0

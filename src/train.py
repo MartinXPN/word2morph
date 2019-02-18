@@ -1,4 +1,5 @@
 import os
+import pickle
 import random
 import sys
 from datetime import datetime
@@ -113,6 +114,8 @@ class Gym(object):
         os.makedirs(os.path.dirname(commandline_path))
         os.makedirs(models_dir)
         np.savetxt(fname=commandline_path, X=sys.argv, fmt='%s')
+        with open(os.path.join(log_dir, 'processor.pkl'), 'wb') as f:
+            pickle.dump(self.processor, file=f, protocol=2)
 
         history = self.model.fit_generator(
             generator=DataGenerator(dataset=self.train_dataset, processor=self.processor, batch_size=batch_size),
