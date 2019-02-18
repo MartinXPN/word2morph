@@ -4,7 +4,7 @@ import numpy as np
 from keras_preprocessing.sequence import pad_sequences
 
 from src.entities.sample import Sample
-from .mappings import CharToIdMapping, WordSegmentTypeToIdMapping, BMESToIdMapping
+from .mappings import CharToIdMapping, WordSegmentTypeToIdMapping, BMESToIdMapping, LabelToIdMapping
 
 
 class DataProcessor(object):
@@ -16,10 +16,12 @@ class DataProcessor(object):
     def __init__(self,
                  char_mapping: CharToIdMapping,
                  word_segment_mapping: WordSegmentTypeToIdMapping,
-                 bmes_mapping: BMESToIdMapping):
+                 bmes_mapping: BMESToIdMapping,
+                 label_mapping: LabelToIdMapping = None):
         self.char_mapping = char_mapping
         self.word_segment_mapping = word_segment_mapping
         self.bmes_mapping = bmes_mapping
+        self.label_mapping = label_mapping
 
     def parse_one(self, sample: Sample) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -28,7 +30,10 @@ class DataProcessor(object):
         """
 
         def segment_to_label(seg: str, seg_type: str) -> int:
-            return len(self.word_segment_mapping) * self.bmes_mapping[seg] + self.word_segment_mapping[seg_type]
+            res = len(self.word_segment_mapping) * self.bmes_mapping[seg] + self.word_segment_mapping[seg_type]
+            if self.label_mapping:
+                res = self.label_mapping[res]
+            return res
 
         x = [self.char_mapping[c] for c in sample.word]
         y = []
@@ -63,7 +68,9 @@ class DataProcessor(object):
         return inputs, labels
 
     def nb_classes(self) -> int:
-        return len(self.word_segment_mapping) * len(self.bmes_mapping)
+        if self.label_mapping is None:
+            return len(self.word_segment_mapping) * len(self.bmes_mapping)
+        return len(self.label_mapping)
 
     def to_sample(self, word: str, prediction: np.ndarray) -> Sample:
         """

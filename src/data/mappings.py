@@ -11,7 +11,7 @@ class Mapping(object):
 
 class KeyToIdMapping(Mapping):
     def __init__(self,
-                 keys: Union[List[str], Set[str]],
+                 keys: Union[List[Union[str, int]], Set[Union[str, int]]],
                  include_unknown: bool=True):
 
         super(KeyToIdMapping, self).__init__()
@@ -19,7 +19,7 @@ class KeyToIdMapping(Mapping):
         self.keys += list(keys)
         self.key_to_id = {key: i for i, key in enumerate(self.keys)}
 
-    def __getitem__(self, item: str) -> int:
+    def __getitem__(self, item: Union[str, int]) -> int:
         if item in self.key_to_id:      return self.key_to_id[item]
         if self.UNK in self.key_to_id:  return self.key_to_id[self.UNK]
         raise KeyError('`{}` is not present in the mapping'.format(item))
@@ -61,3 +61,10 @@ class WordSegmentTypeToIdMapping(KeyToIdMapping):
 class BMESToIdMapping(KeyToIdMapping):
     def __init__(self):
         super(BMESToIdMapping, self).__init__(['B', 'M', 'E', 'S'], False)
+
+
+class LabelToIdMapping(KeyToIdMapping):
+    def __init__(self,
+                 labels: Union[List[int], Set[int]],
+                 include_unknown: bool = False):
+        super(LabelToIdMapping, self).__init__(list(dict.fromkeys(labels)), include_unknown)

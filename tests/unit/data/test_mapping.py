@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from src.data.mappings import CharToIdMapping, WordSegmentTypeToIdMapping
+from src.data.mappings import CharToIdMapping, WordSegmentTypeToIdMapping, LabelToIdMapping
 
 
 class TestCharMappings(TestCase):
@@ -42,3 +42,12 @@ class TestWordMappings(TestCase):
         self.assertEqual(mapping['ROOT'], 2)
         self.assertEqual(mapping[mapping.UNK], 0)
         self.assertEqual(mapping['UNKNOWN'], mapping[mapping.UNK])
+
+
+class TestLabelMappings(TestCase):
+    def test_label_mapping(self):
+        mapping = LabelToIdMapping(labels=[1, 4, 10, 40])
+        self.assertEqual(mapping[10], 2)
+        self.assertEqual(mapping[40], 3)
+        with self.assertRaises(KeyError):
+            _ = mapping[2]

@@ -13,7 +13,7 @@ from sklearn.utils import class_weight
 from src.data.loaders import DataLoader
 from src.entities.dataset import BucketDataset, Dataset
 from src.data.generators import DataGenerator
-from src.data.mappings import CharToIdMapping, WordSegmentTypeToIdMapping, BMESToIdMapping
+from src.data.mappings import CharToIdMapping, WordSegmentTypeToIdMapping, BMESToIdMapping, LabelToIdMapping
 from src.data.processing import DataProcessor
 from src.models.cnn import CNNModel
 from src.models.rnn import RNNModel
@@ -29,6 +29,7 @@ class Gym(object):
         self.char_mapping: CharToIdMapping = None
         self.word_mapping: WordSegmentTypeToIdMapping = None
         self.bmes_mapping: BMESToIdMapping = None
+        self.label_mapping: LabelToIdMapping = None
         self.processor: DataProcessor = None
         self.class_weights: Dict = None
 
@@ -53,15 +54,22 @@ class Gym(object):
                                                        include_unknown=False)
         print('Char mapping:', self.char_mapping)
         print('Word Segment type mapping:', self.word_mapping)
+        print('BMES mapping:', self.bmes_mapping)
 
         self.processor = DataProcessor(char_mapping=self.char_mapping,
                                        word_segment_mapping=self.word_mapping,
                                        bmes_mapping=self.bmes_mapping)
 
+        print('Removing wrong labels (current labels are: the cross product [BMES x SegmentTypes])...')
         labels = list(chain.from_iterable([self.processor.parse_one(sample)[1] for sample in self.train_dataset]))
         labels = np.array(labels, dtype=np.int8)
-        self.class_weights = class_weight.compute_class_weight('balanced', np.unique(labels), labels)
+        unique_labels = np.unique(labels)
+
+        self.label_mapping = LabelToIdMapping(labels=list(unique_labels))
+        self.class_weights = class_weight.compute_class_weight('balanced', unique_labels, labels)
+        self.processor.label_mapping = self.label_mapping
         print('Calculated class weights:', self.class_weights)
+        print('Number of classes per char:', self.processor.nb_classes())
         return self
 
     def construct_model(self,
