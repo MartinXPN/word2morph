@@ -38,7 +38,7 @@ class Evaluate(Callback):
         correct = 0
         nb_words = 0
         for batch_prediction, batch_label in zip(predictions, labels):
-            correct += sum([np.array_equal(word_prediction, word_label)
+            correct += sum([np.array_equal(np.argmax(word_prediction, axis=1), np.argmax(word_label, axis=1))
                             for word_prediction, word_label in zip(batch_prediction, batch_label)])
             nb_words += len(batch_label)
 
