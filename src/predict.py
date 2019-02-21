@@ -15,7 +15,7 @@ from src.models.rnn import RNNModel
 
 
 def predict(model_path: str, processor_path: str, batch_size: int = 80,
-            input_path='datasets/rus.dev', output_path='logs/rus.predictions'):
+            input_path='datasets/rus.test', output_path='logs/rus.predictions'):
     model: Model = load_model(filepath=model_path, custom_objects={'CNNModel': CNNModel, 'RNNModel': RNNModel})
     dataset: Dataset = BucketDataset(samples=DataLoader(file_path=input_path).load())
     with open(processor_path, 'rb') as f:

@@ -47,7 +47,7 @@ class Gym(object):
             pass
         return self
 
-    def init_data(self, train_path: str = 'datasets/rus.train', valid_path: str = 'datasets/rus.dev'):
+    def init_data(self, train_path: str = 'datasets/rus.train', valid_path: str = 'datasets/rus.test'):
         self.train_dataset = BucketDataset(samples=DataLoader(file_path=train_path).load())
         self.valid_dataset = BucketDataset(samples=DataLoader(file_path=valid_path).load())
 
