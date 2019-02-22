@@ -20,9 +20,10 @@ def multi_class_roc_auc_score(y_test, y_pred, average="macro"):
 
 class Evaluate(Callback):
     # TODO -> evaluate before correcting the predictions and evaluate after to see the difference
-    def __init__(self, data_generator: DataGenerator):
+    def __init__(self, data_generator: DataGenerator, prepend_str: str = 'val_'):
         super(Evaluate, self).__init__()
         self.data_generator = data_generator
+        self.prepend_str = prepend_str
 
     def evaluate(self,
                  predictions: List[np.ndarray],
@@ -75,7 +76,7 @@ class Evaluate(Callback):
 
         cf_matrix, metrics = self.evaluate(predictions=epoch_predictions, labels=epoch_labels)
         for metric_name, metric_value in metrics:
-            logs['val_' + metric_name] = metric_value
+            logs[self.prepend_str + metric_name] = metric_value
 
         print('\nEvaluating for epoch {}...'.format(epoch + 1))
         print('Confusion Matrix:\n', cf_matrix)
