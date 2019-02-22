@@ -41,6 +41,7 @@ class Gym(object):
         random.seed(seed)
         np.random.seed(seed)
         try:
+            # noinspection PyUnresolvedReferences
             import tensorflow
             tensorflow.set_random_seed(seed)
         except ImportError:
@@ -102,7 +103,7 @@ class Gym(object):
         else:
             raise ValueError('Cannot find implementation for the model type {}'.format(model_type))
 
-        self.model.compile(optimizer=Adam(), loss='categorical_crossentropy')
+        self.model.compile(optimizer=Adam(clipnorm=5.0), loss='categorical_crossentropy', metrics=['acc'])
         self.model.summary()
         return self
 
@@ -126,8 +127,8 @@ class Gym(object):
                                                              batch_size=batch_size)),
                        TensorBoard(log_dir=log_dir),
                        ModelCheckpoint(filepath=os.path.join(models_dir, '{epoch:02d}-loss-{val_loss:.2f}.hdf5'),
-                                       monitor='val_loss', save_best_only=True, verbose=1, mode='min'),
-                       EarlyStopping(patience=patience)],
+                                       monitor='val_acc', save_best_only=True, verbose=1),
+                       EarlyStopping(monitor='val_acc', patience=patience)],
             class_weight=self.class_weights,
         )
         return history.history

@@ -6,7 +6,7 @@ python src/train.py
         fix_random_seed 0
         init_data --train_path datasets/rus.train --valid_path datasets/rus.test
         construct_model --model_type CNN --embeddings_size 8 --kernel_sizes (5,5,5) --nb_filters (192,192,192) --recurrent_units (64,128,256) --dense_output_units 64 --dropout 0.2
-        train --batch_size 32 --epochs 50 --patience 10 --log_dir logs --models_dir checkpoints
+        train --batch_size 32 --epochs 50 --patience 10 --log_dir logs
 ```
 
 ### Hyperparameter search (Bayesian tuning and bandits)
@@ -14,7 +14,7 @@ python src/train.py
 python src/hyperparametersearch.py
         fix_random_seed 0
         init_data --train_path datasets/rus.train --valid_path datasets/rus.test
-        search_hyperparameters --nb_trials 50 --epochs 50 --patience 10 --log_dir logs --models_dir checkpoints
+        search_hyperparameters --nb_trials 50 --epochs 50 --patience 10 --log_dir logs
 ```
 
 ### Predict on test data
