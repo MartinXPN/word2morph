@@ -1,7 +1,7 @@
 import io
 from typing import Optional, List
 
-from src.entities.sample import Sample, Segment
+from src.entities.sample import Segment, Sample
 
 
 class DataLoader(object):

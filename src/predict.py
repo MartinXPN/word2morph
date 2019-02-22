@@ -16,7 +16,7 @@ from src.models.rnn import RNNModel
 from src.util.metrics import Evaluate
 
 
-def predict(model_path: str, processor_path: str, batch_size: int = 80,
+def predict(model_path: str, processor_path: str, batch_size: int = 1,
             input_path='datasets/rus.test', output_path='logs/rus.predictions'):
     model: Model = load_model(filepath=model_path, custom_objects={'CNNModel': CNNModel, 'RNNModel': RNNModel})
     dataset: Dataset = BucketDataset(samples=DataLoader(file_path=input_path).load())
@@ -27,7 +27,7 @@ def predict(model_path: str, processor_path: str, batch_size: int = 80,
     data_generator: DataGenerator = DataGenerator(dataset=dataset,
                                                   processor=processor,
                                                   batch_size=batch_size)
-    evaluate = Evaluate(data_generator=data_generator)
+    evaluate = Evaluate(data_generator=data_generator, prepend_str='test_')
     evaluate.model = model
     evaluate.on_epoch_end(epoch=0)
 
@@ -50,8 +50,7 @@ def predict(model_path: str, processor_path: str, batch_size: int = 80,
 
     print('Word accuracy after filtering only valid combinations:', len(correct_words) / len(dataset), flush=True)
     with io.open(output_path, 'w', encoding='utf-8') as f:
-        for sample in predicted_samples:
-            f.write(sample.word + '\t' + '/'.join([s.segment + ':' + s.type for s in sample.segments]) + '\n')
+        f.write('\n'.join([str(sample) for sample in predicted_samples]))
 
 
 if __name__ == '__main__':

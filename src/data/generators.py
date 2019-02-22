@@ -38,6 +38,7 @@ class DataGenerator(object):
         return self.__next__()
 
     def __iter__(self):
+        # TODO make iterable
         return self
 
     def __len__(self) -> int:
