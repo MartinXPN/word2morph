@@ -26,15 +26,17 @@ class HyperparameterSearchGym(Gym):
         self.tuners = {
             'CNN': GP([
                 ('embeddings_size',     HyperParameter(ParamTypes.INT, [4, 32])),
-                ('kernel_sizes',        TupleHyperparameter(param_range=[(7, 7, 7, 7),      (5, 5, 5, 5),       (3, 3, 3, 3),       (5, 5, 3, 3),   (7, 5, 5, 3)])),
-                ('nb_filters',          TupleHyperparameter(param_range=[(192, 192, 192),   (64, 128, 256),     (32, 64, 128, 256), (64, 64, 128, 128)])),
+                ('kernel_sizes',        TupleHyperparameter(param_range=[(7, 7, 7, 7),          (5, 5, 5, 5),           (3, 3, 3, 3),           (5, 5, 3, 3),   (7, 5, 5, 3)])),
+                ('nb_filters',          TupleHyperparameter(param_range=[(192, 192, 192),       (232, 232, 232),        (192, 232, 256),        (64, 128, 256),
+                                                                         (32, 64, 128, 256),    (64, 64, 128, 128),     (64, 128, 198, 256),    (32, 64, 64, 128)])),
                 ('dense_output_units',  HyperParameter(ParamTypes.INT, [16, 256])),
                 ('dropout',             HyperParameter(ParamTypes.FLOAT, [0., 0.6])),
                 ('batch_size',          HyperParameter(ParamTypes.INT, [4, 512])),
             ]),
             'RNN': GP([
                 ('embeddings_size',     HyperParameter(ParamTypes.INT, [4, 64])),
-                ('recurrent_units',     TupleHyperparameter(param_range=[(32, 64, 64), (32, 64, 128), (64, 64, 128), (64, 128, 256), (128, 128), (256, 256)])),
+                ('recurrent_units',     TupleHyperparameter(param_range=[(64, 128),     (128, 256),     (256, 512),     (128, 128),     (256, 256),
+                                                                         (32, 64, 64),  (32, 64, 128),  (64, 64, 128),  (64, 128, 256), (128, 128, 256)])),
                 ('dense_output_units',  HyperParameter(ParamTypes.INT, [16, 256])),
                 ('dropout',             HyperParameter(ParamTypes.FLOAT, [0., 0.6])),
                 ('batch_size',          HyperParameter(ParamTypes.INT, [4, 512])),
@@ -42,23 +44,30 @@ class HyperparameterSearchGym(Gym):
         }
         self.selector = UCB1(list(self.tuners.keys()))
 
-    def search_hyperparameters(self, nb_trials: int, epochs: int = 100, patience: int = 10,
-                               log_dir: str = 'logs', models_dir: str = 'checkpoints'):
+    def search_hyperparameters(self, nb_trials: int, epochs: int = 100, patience: int = 10, log_dir: str = 'logs'):
         for trial in range(nb_trials):
-            model_choice = self.selector.select({'CNN': self.tuners['CNN'].y})
+            model_choice = self.selector.select({
+                'CNN': self.tuners['CNN'].y,
+                'RNN': self.tuners['RNN'].y,
+            })
             parameters = self.tuners[model_choice].propose()
 
             ''' Construct and train the model with the selected parameters '''
             transformed_params = {key: tuple(value.tolist()) if isinstance(value, np.ndarray) else value
                                   for key, value in parameters.items()}
-            transformed_params.update(model_type=model_choice,
-                                      epochs=epochs, patience=patience,
-                                      log_dir=log_dir, models_dir=models_dir)
+            transformed_params.update(model_type=model_choice, epochs=epochs, patience=patience, log_dir=log_dir)
 
             print('\n\n\nTraining the model: {} with hyperparameters: {}'.format(model_choice, transformed_params))
             self.construct_model(**map_arguments(self.construct_model, transformed_params))
             history = self.train(**map_arguments(self.train, transformed_params))
             self.tuners[model_choice].add(transformed_params, max(history['val_acc']))
+
+        for model_choice in self.tuners.keys():
+            model = self.tuners[model_choice]
+            # noinspection PyProtectedMember
+            print('Best score for {} model: {} with hyperparameters: {}'.format(model_choice,
+                                                                                model._best_score,
+                                                                                model._best_hyperparams))
 
 
 if __name__ == '__main__':

@@ -4,7 +4,7 @@
 ```commandline
 python src/train.py
         fix_random_seed 0
-        init_data --train_path datasets/rus.train --valid_path datasets/rus.test
+        init_data --train_path datasets/rus.train --valid_path datasets/rus.valid
         construct_model --model_type CNN --embeddings_size 8 --kernel_sizes (5,5,5) --nb_filters (192,192,192) --recurrent_units (64,128,256) --dense_output_units 64 --dropout 0.2
         train --batch_size 32 --epochs 75 --patience 10 --log_dir logs
 ```
@@ -13,7 +13,7 @@ python src/train.py
 ```commandline
 python src/hyperparametersearch.py
         fix_random_seed 0
-        init_data --train_path datasets/rus.train --valid_path datasets/rus.test
+        init_data --train_path datasets/rus.train --valid_path datasets/rus.valid
         search_hyperparameters --nb_trials 50 --epochs 75 --patience 10 --log_dir logs
 ```
 
