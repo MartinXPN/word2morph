@@ -88,7 +88,7 @@ class Gym(object):
                         dense_output_units: int=64,
                         dropout: float=0.2):
         # Clean-up the keras session before constructing a new model
-        del self.model
+        self.model = None
         K.clear_session()
         gc.collect()
 
