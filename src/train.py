@@ -1,3 +1,4 @@
+import itertools
 import os
 import pickle
 import random
@@ -120,14 +121,12 @@ class Gym(object):
 
         train_generator = DataGenerator(dataset=self.train_dataset, processor=self.processor, batch_size=batch_size)
         valid_generator = DataGenerator(dataset=self.valid_dataset, processor=self.processor, batch_size=batch_size)
-        train_generator = iter(train_generator)
-        valid_generator = iter(valid_generator)
 
         history = self.model.fit_generator(
-            generator=train_generator,
-            steps_per_epoch=len(self.train_dataset) // batch_size,
-            epochs=epochs, use_multiprocessing=True, workers=4,
-            callbacks=[Evaluate(data_generator=valid_generator, nb_steps=len(self.valid_dataset) // batch_size),
+            generator=itertools.cycle(train_generator),
+            steps_per_epoch=len(train_generator),
+            epochs=epochs,
+            callbacks=[Evaluate(data_generator=itertools.cycle(valid_generator), nb_steps=len(valid_generator)),
                        TensorBoard(log_dir=log_dir),
                        ModelCheckpoint(filepath=os.path.join(models_dir, '{epoch:02d}-loss-{val_loss:.2f}.hdf5'),
                                        monitor='val_acc', save_best_only=True, verbose=1),

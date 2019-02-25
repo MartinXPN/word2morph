@@ -1,4 +1,4 @@
-from typing import Tuple, Iterable, Generator
+from typing import Tuple, Generator
 
 import numpy as np
 
@@ -20,16 +20,17 @@ class DataGenerator(object):
             self.dataset.shuffle()
 
     def __iter__(self) -> Generator[Tuple[np.ndarray, np.ndarray], None, None]:
-        def gen(indices: Iterable):
-            batch = [self.dataset[i % len(self.dataset)]
-                     for i in indices]
-            return self.processor.parse(data=batch)
+        num_samples = len(self.dataset)
+        for start in range(0, num_samples, self.batch_size):
+            end = start + self.batch_size
+            batch = self.dataset[start: end]
+            current_batch = self.processor.parse(data=batch)
 
-        start = 0
-        current_batch = gen(range(0, self.batch_size))
-        while True:
-            print('Generating batch with start:', start)
-            yield current_batch
             start += self.batch_size
             start %= len(self.dataset)
-            current_batch = gen(range(start, start+self.batch_size))
+            yield current_batch
+
+    def __len__(self):
+        if len(self.dataset) % self.batch_size == 0:
+            return len(self.dataset) // self.batch_size
+        return len(self.dataset) // self.batch_size + 1
