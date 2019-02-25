@@ -1,3 +1,4 @@
+import gc
 import itertools
 import os
 import pickle
@@ -12,6 +13,7 @@ import numpy as np
 from keras import Model
 from keras.callbacks import ModelCheckpoint, TensorBoard, EarlyStopping
 from keras.optimizers import Adam
+from keras import backend as K
 from sklearn.utils import class_weight
 
 from src.data.loaders import DataLoader
@@ -85,6 +87,11 @@ class Gym(object):
                         recurrent_units: Tuple[int, ...] = (64, 128, 256),
                         dense_output_units: int=64,
                         dropout: float=0.2):
+        # Clean-up the keras session before constructing a new model
+        K.clear_session()
+        del self.model
+        gc.collect()
+
         model_type = model_type.upper()
         if model_type == 'CNN':
             self.model = CNNModel(nb_symbols=len(self.char_mapping),
