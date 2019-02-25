@@ -88,8 +88,8 @@ class Gym(object):
                         dense_output_units: int=64,
                         dropout: float=0.2):
         # Clean-up the keras session before constructing a new model
-        K.clear_session()
         del self.model
+        K.clear_session()
         gc.collect()
 
         model_type = model_type.upper()
