@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Iterable, Generator
 
 import numpy as np
 
@@ -15,31 +15,21 @@ class DataGenerator(object):
         self.dataset = dataset
         self.processor = processor
         self.batch_size = batch_size
-        self.shuffle = shuffle
 
-        self.batch_start = len(dataset)
+        if shuffle:
+            self.dataset.shuffle()
 
-    def __next__(self) -> Tuple[np.ndarray, np.ndarray]:
-        """ Generates a new batch of data """
+    def __iter__(self) -> Generator[Tuple[np.ndarray, np.ndarray], None, None]:
+        def gen(indices: Iterable):
+            batch = [self.dataset[i % len(self.dataset)]
+                     for i in indices]
+            return self.processor.parse(data=batch)
 
-        ''' Start a new epoch '''
-        if self.batch_start >= len(self.dataset):
-            self.batch_start = 0
-            if self.shuffle:
-                self.dataset.shuffle()
-
-        ''' Generate a new batch '''
-        batch = [self.dataset[i % len(self.dataset)]
-                 for i in range(self.batch_start, self.batch_start + self.batch_size)]
-        self.batch_start += self.batch_size
-        return self.processor.parse(data=batch)
-
-    def next(self) -> Tuple[np.ndarray, np.ndarray]:
-        return self.__next__()
-
-    def __iter__(self):
-        # TODO make iterable
-        return self
-
-    def __len__(self) -> int:
-        return len(self.dataset) // self.batch_size
+        start = 0
+        current_batch = gen(range(0, self.batch_size))
+        while True:
+            print('Generating batch with start:', start)
+            yield current_batch
+            start += self.batch_size
+            start %= len(self.dataset)
+            current_batch = gen(range(start, start+self.batch_size))

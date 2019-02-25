@@ -1,5 +1,5 @@
 from pprint import pprint
-from typing import Tuple, List
+from typing import Tuple, List, Iterator
 
 import numpy as np
 from keras.callbacks import Callback
@@ -20,9 +20,10 @@ def multi_class_roc_auc_score(y_test, y_pred, average="macro"):
 
 class Evaluate(Callback):
     # TODO -> evaluate before correcting the predictions and evaluate after to see the difference
-    def __init__(self, data_generator: DataGenerator, prepend_str: str = 'val_'):
+    def __init__(self, data_generator: Iterator[DataGenerator], nb_steps: int, prepend_str: str = 'val_'):
         super(Evaluate, self).__init__()
         self.data_generator = data_generator
+        self.nb_steps = nb_steps
         self.prepend_str = prepend_str
 
     def evaluate(self,
@@ -68,8 +69,7 @@ class Evaluate(Callback):
 
         epoch_labels = []
         epoch_predictions = []
-        for i in range(len(self.data_generator)):
-            inputs, labels = next(self.data_generator)
+        for i, (inputs, labels) in zip(range(self.nb_steps), self.data_generator):
             predictions = self.model.predict(inputs)
             epoch_labels.append(labels)
             epoch_predictions.append(predictions)
