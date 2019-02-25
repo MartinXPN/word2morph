@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Generator
 
 import numpy as np
 
@@ -15,31 +15,22 @@ class DataGenerator(object):
         self.dataset = dataset
         self.processor = processor
         self.batch_size = batch_size
-        self.shuffle = shuffle
 
-        self.batch_start = len(dataset)
+        if shuffle:
+            self.dataset.shuffle()
 
-    def __next__(self) -> Tuple[np.ndarray, np.ndarray]:
-        """ Generates a new batch of data """
+    def __iter__(self) -> Generator[Tuple[np.ndarray, np.ndarray], None, None]:
+        num_samples = len(self.dataset)
+        for start in range(0, num_samples, self.batch_size):
+            end = start + self.batch_size
+            batch = self.dataset[start: end]
+            current_batch = self.processor.parse(data=batch)
 
-        ''' Start a new epoch '''
-        if self.batch_start >= len(self.dataset):
-            self.batch_start = 0
-            if self.shuffle:
-                self.dataset.shuffle()
+            start += self.batch_size
+            start %= len(self.dataset)
+            yield current_batch
 
-        ''' Generate a new batch '''
-        batch = [self.dataset[i % len(self.dataset)]
-                 for i in range(self.batch_start, self.batch_start + self.batch_size)]
-        self.batch_start += self.batch_size
-        return self.processor.parse(data=batch)
-
-    def next(self) -> Tuple[np.ndarray, np.ndarray]:
-        return self.__next__()
-
-    def __iter__(self):
-        # TODO make iterable
-        return self
-
-    def __len__(self) -> int:
-        return len(self.dataset) // self.batch_size
+    def __len__(self):
+        if len(self.dataset) % self.batch_size == 0:
+            return len(self.dataset) // self.batch_size
+        return len(self.dataset) // self.batch_size + 1

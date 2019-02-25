@@ -28,4 +28,3 @@ python -m src.predict
 #### TODO
 * Evaluate results after post-processing
 * Improve post-processing step
-* Make `DataGenerator` iterable

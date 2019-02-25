@@ -1,5 +1,5 @@
 import random
-from typing import List, Set
+from typing import List, Set, overload, Iterator
 
 from .sample import Sample
 
@@ -11,10 +11,21 @@ class Dataset(object):
     def __len__(self) -> int:
         return len(self.data)
 
+    def __iter__(self) -> Iterator[Sample]:
+        return iter(self.data)
+
     def shuffle(self):
         random.shuffle(self.data)
 
+    @overload
+    def __getitem__(self, i: slice) -> List[Sample]:
+        ...
+
+    @overload
     def __getitem__(self, i: int) -> Sample:
+        ...
+
+    def __getitem__(self, i) -> Sample:
         return self.data[i]
 
     def get_chars(self) -> Set[str]:
