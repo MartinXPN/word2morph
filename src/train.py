@@ -1,7 +1,6 @@
 import gc
 import itertools
 import os
-import pickle
 import random
 import sys
 from datetime import datetime
@@ -24,6 +23,7 @@ from src.data.processing import DataProcessor
 from src.models.cnn import CNNModel
 from src.models.rnn import RNNModel
 from src.util.args import map_arguments
+from src.util.filesystem import save_file
 from src.util.metrics import Evaluate
 
 
@@ -38,9 +38,11 @@ class Gym(object):
         self.label_mapping: LabelToIdMapping = None
         self.processor: DataProcessor = None
         self.class_weights: Dict = None
+        self.params: Dict = {}
 
     def fix_random_seed(self, seed: int):
         """ Fix random seed for reproducibility """
+        self.params.update(locals())
         random.seed(seed)
         np.random.seed(seed)
         try:
@@ -52,6 +54,7 @@ class Gym(object):
         return self
 
     def init_data(self, train_path: str = 'datasets/rus.train', valid_path: str = 'datasets/rus.test'):
+        self.params.update(locals())
         self.train_dataset = BucketDataset(samples=DataLoader(file_path=train_path).load())
         self.valid_dataset = BucketDataset(samples=DataLoader(file_path=valid_path).load())
 
@@ -87,8 +90,10 @@ class Gym(object):
                         recurrent_units: Tuple[int, ...] = (64, 128, 256),
                         dense_output_units: int=64,
                         dropout: float=0.2):
+        self.params.update(locals())
+
         # Clean-up the keras session before constructing a new model
-        self.model = None
+        del self.model
         K.clear_session()
         gc.collect()
 
@@ -116,15 +121,15 @@ class Gym(object):
         return self
 
     def train(self, batch_size: int = 32, epochs: int = 100, patience: int = 10, log_dir: str = 'logs'):
+        self.params.update(locals()), self.params.pop('self')
 
+        ''' Save all the objects/parameters for reproducibility '''
         log_dir = os.path.join(log_dir, datetime.now().replace(microsecond=0).isoformat())
         models_dir = os.path.join(log_dir, 'checkpoints/')
-        commandline_path = os.path.join(log_dir, 'commandline.txt')
-        os.makedirs(os.path.dirname(commandline_path))
         os.makedirs(models_dir)
-        np.savetxt(fname=commandline_path, X=sys.argv, fmt='%s')
-        with open(os.path.join(log_dir, 'processor.pkl'), 'wb') as f:
-            pickle.dump(self.processor, file=f, protocol=2)
+        save_file(os.path.join(log_dir, 'commandline.txt'), obj=sys.argv, save_pickled=False)
+        save_file(os.path.join(log_dir, 'params.txt'), obj=self.params, save_pickled=False)
+        save_file(os.path.join(log_dir, 'processor.pkl'), obj=self.processor, save_pickled=True)
 
         train_generator = DataGenerator(dataset=self.train_dataset, processor=self.processor, batch_size=batch_size)
         valid_generator = DataGenerator(dataset=self.valid_dataset, processor=self.processor, batch_size=batch_size)

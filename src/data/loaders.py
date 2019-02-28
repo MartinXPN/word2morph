@@ -1,4 +1,3 @@
-import io
 from typing import Optional, List
 
 from src.entities.sample import Segment, Sample
@@ -24,7 +23,7 @@ class DataLoader(object):
 
     @staticmethod
     def load_file(file_path: str) -> List[str]:
-        with io.open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, 'r', encoding='utf-8') as f:
             return f.read().splitlines()
 
     @staticmethod
