@@ -27,7 +27,7 @@ def predict(model_path: str, processor_path: str, batch_size: int = 1,
     data_generator: DataGenerator = DataGenerator(dataset=dataset,
                                                   processor=processor,
                                                   batch_size=batch_size)
-    evaluate = Evaluate(data_generator=data_generator, prepend_str='test_')
+    evaluate = Evaluate(data_generator=iter(data_generator), nb_steps=len(data_generator), prepend_str='test_')
     evaluate.model = model
     evaluate.on_epoch_end(epoch=0)
 
