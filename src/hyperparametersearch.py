@@ -44,7 +44,9 @@ class HyperparameterSearchGym(Gym):
         }
         self.selector = UCB1(list(self.tuners.keys()))
 
-    def search_hyperparameters(self, nb_trials: int, epochs: int = 100, patience: int = 10, log_dir: str = 'logs'):
+    def search_hyperparameters(self, nb_trials: int, epochs: int = 100, patience: int = 10,
+                               monitor_metric: str = 'val_acc', log_dir: str = 'logs'):
+        best_training_curve = {key: None for key in self.tuners.keys()}
         for trial in range(nb_trials):
             model_choice = self.selector.select({
                 'CNN': self.tuners['CNN'].y,
@@ -55,12 +57,18 @@ class HyperparameterSearchGym(Gym):
             ''' Construct and train the model with the selected parameters '''
             transformed_params = {key: tuple(value.tolist()) if isinstance(value, np.ndarray) else value
                                   for key, value in parameters.items()}
-            transformed_params.update(model_type=model_choice, epochs=epochs, patience=patience, log_dir=log_dir)
+            transformed_params.update(model_type=model_choice, epochs=epochs, patience=patience, log_dir=log_dir,
+                                      monitor_metric=monitor_metric, so_far_best=best_training_curve[model_choice])
 
             print('\n\n\nTraining the model: {} with hyperparameters: {}'.format(model_choice, transformed_params))
             self.construct_model(**map_arguments(self.construct_model, transformed_params))
             history = self.train(**map_arguments(self.train, transformed_params))
-            self.tuners[model_choice].add(transformed_params, max(history['val_acc']))
+
+            best_score = max(history[monitor_metric])
+            # noinspection PyProtectedMember
+            if self.tuners[model_choice]._best_score < best_score:
+                best_training_curve[model_choice] = history
+            self.tuners[model_choice].add(transformed_params, best_score)
 
         for model_choice in self.tuners.keys():
             model = self.tuners[model_choice]

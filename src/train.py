@@ -5,25 +5,26 @@ import random
 import sys
 from datetime import datetime
 from itertools import chain
-from typing import Tuple, Dict
+from typing import Tuple, Dict, List, Optional
 
 import fire
 import numpy as np
 from keras import Model
-from keras.callbacks import ModelCheckpoint, TensorBoard, EarlyStopping
-from keras.optimizers import Adam
 from keras import backend as K
+from keras.callbacks import ModelCheckpoint, TensorBoard
+from keras.optimizers import Adam
 from sklearn.utils import class_weight
 
-from src.data.loaders import DataLoader
-from src.entities.dataset import BucketDataset, Dataset
 from src.data.generators import DataGenerator
+from src.data.loaders import DataLoader
 from src.data.mappings import CharToIdMapping, WordSegmentTypeToIdMapping, BMESToIdMapping, LabelToIdMapping
 from src.data.processing import DataProcessor
+from src.entities.dataset import BucketDataset, Dataset
 from src.models.cnn import CNNModel
 from src.models.rnn import RNNModel
 from src.util.args import map_arguments
 from src.util.filesystem import save_file
+from src.util.heuristics import ComparableEarlyStopping
 from src.util.metrics import Evaluate
 
 
@@ -120,8 +121,10 @@ class Gym(object):
         self.model.summary()
         return self
 
-    def train(self, batch_size: int = 32, epochs: int = 100, patience: int = 10, log_dir: str = 'logs'):
-        self.params.update(locals()), self.params.pop('self')
+    def train(self, batch_size: int = 32, epochs: int = 100, patience: int = 10,
+              best_training_curve: Optional[List[float]] = None,
+              monitor_metric: str = 'val_acc', log_dir: str = 'logs'):
+        self.params.update(locals()), self.params.pop('self'), self.params.pop('best_training_curve')
 
         ''' Save all the objects/parameters for reproducibility '''
         log_dir = os.path.join(log_dir, datetime.now().replace(microsecond=0).isoformat())
@@ -141,8 +144,8 @@ class Gym(object):
             callbacks=[Evaluate(data_generator=itertools.cycle(valid_generator), nb_steps=len(valid_generator)),
                        TensorBoard(log_dir=log_dir),
                        ModelCheckpoint(filepath=os.path.join(models_dir, '{epoch:02d}-loss-{val_loss:.2f}.hdf5'),
-                                       monitor='val_acc', save_best_only=True, verbose=1),
-                       EarlyStopping(monitor='val_acc', patience=patience)],
+                                       monitor=monitor_metric, save_best_only=True, verbose=1),
+                       ComparableEarlyStopping(to_compare_values=best_training_curve, monitor=monitor_metric, patience=patience)],
             class_weight=self.class_weights,
         )
         return history.history
