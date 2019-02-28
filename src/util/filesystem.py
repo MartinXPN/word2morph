@@ -1,7 +1,20 @@
 import json
+from inspect import Parameter
+
+import numpy as np
 import os
 import pickle
 from typing import Any
+
+
+def default_encoding(o):
+    if isinstance(o, (np.int64, np.int32, np.int)):
+        return int(o)
+    if isinstance(o, (np.float32, np.float)):
+        return float(o)
+    if isinstance(o, Parameter):
+        return o.name
+    return str(o)
 
 
 def save_file(path: str, obj: Any, save_pickled=False):
@@ -13,9 +26,8 @@ def save_file(path: str, obj: Any, save_pickled=False):
         return
 
     if isinstance(obj, (dict, list)):
-        print('Obj:', obj)
         with open(path, 'w') as f:
-            f.write(json.dumps(obj))
+            f.write(json.dumps(obj, default=default_encoding))
         return
 
     with open(path, 'w') as f:
