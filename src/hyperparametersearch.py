@@ -58,7 +58,8 @@ class HyperparameterSearchGym(Gym):
             transformed_params = {key: tuple(value.tolist()) if isinstance(value, np.ndarray) else value
                                   for key, value in parameters.items()}
             transformed_params.update(model_type=model_choice, epochs=epochs, patience=patience, log_dir=log_dir,
-                                      monitor_metric=monitor_metric, so_far_best=best_training_curve[model_choice])
+                                      monitor_metric=monitor_metric,
+                                      best_training_curve=best_training_curve[model_choice])
 
             print('\n\n\nTraining the model: {} with hyperparameters: {}'.format(model_choice, transformed_params))
             self.construct_model(**map_arguments(self.construct_model, transformed_params))
@@ -67,7 +68,7 @@ class HyperparameterSearchGym(Gym):
             best_score = max(history[monitor_metric])
             # noinspection PyProtectedMember
             if self.tuners[model_choice]._best_score < best_score:
-                best_training_curve[model_choice] = history
+                best_training_curve[model_choice] = history[monitor_metric]
             self.tuners[model_choice].add(transformed_params, best_score)
 
         for model_choice in self.tuners.keys():
