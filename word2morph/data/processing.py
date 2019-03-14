@@ -3,7 +3,7 @@ from typing import Tuple, List
 import numpy as np
 from keras_preprocessing.sequence import pad_sequences
 
-from src.entities.sample import Sample, Segment
+from word2morph.entities.sample import Sample, Segment
 from .mappings import CharToIdMapping, WordSegmentTypeToIdMapping, BMESToIdMapping, LabelToIdMapping
 
 

@@ -1,7 +1,7 @@
 from unittest import TestCase
 
-from src.data.loaders import DataLoader
-from src.entities.dataset import Dataset, BucketDataset
+from word2morph.data.loaders import DataLoader
+from word2morph.entities.dataset import Dataset, BucketDataset
 
 
 class TestSampleDataset(TestCase):

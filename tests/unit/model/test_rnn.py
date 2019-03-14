@@ -2,10 +2,10 @@ from unittest import TestCase
 
 import numpy as np
 
-from src.data.loaders import DataLoader
-from src.data.mappings import CharToIdMapping, WordSegmentTypeToIdMapping, BMESToIdMapping
-from src.data.processing import DataProcessor
-from src.models.rnn import RNNModel
+from word2morph.data.loaders import DataLoader
+from word2morph.data.mappings import CharToIdMapping, WordSegmentTypeToIdMapping, BMESToIdMapping
+from word2morph.data.processing import DataProcessor
+from word2morph.models.rnn import RNNModel
 
 
 class TestRNN(TestCase):

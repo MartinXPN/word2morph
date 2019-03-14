@@ -7,13 +7,13 @@ from keras import Model
 from keras.engine.saving import load_model
 from tqdm import tqdm
 
-from src.data.generators import DataGenerator
-from src.data.loaders import DataLoader
-from src.data.processing import DataProcessor
-from src.entities.dataset import BucketDataset, Dataset
-from src.models.cnn import CNNModel
-from src.models.rnn import RNNModel
-from src.util.metrics import Evaluate
+from word2morph.data.generators import DataGenerator
+from word2morph.data.loaders import DataLoader
+from word2morph.data.processing import DataProcessor
+from word2morph.entities.dataset import BucketDataset, Dataset
+from word2morph.models.cnn import CNNModel
+from word2morph.models.rnn import RNNModel
+from word2morph.util.metrics import Evaluate
 
 
 def predict(model_path: str, processor_path: str, batch_size: int = 1,

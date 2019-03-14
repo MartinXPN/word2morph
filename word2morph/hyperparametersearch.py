@@ -5,8 +5,8 @@ from btb.hyper_parameter import CatHyperParameter
 from btb.selection import UCB1
 from btb.tuning import GP
 
-from src.train import Gym
-from src.util.args import map_arguments
+from word2morph.train import Gym
+from word2morph.util.args import map_arguments
 
 
 class TupleHyperparameter(CatHyperParameter):

@@ -7,7 +7,7 @@ from sklearn.metrics import (confusion_matrix, precision_score, recall_score, f1
                              accuracy_score, log_loss, roc_auc_score)
 from sklearn.preprocessing import LabelBinarizer
 
-from src.data.generators import DataGenerator
+from word2morph.data.generators import DataGenerator
 
 
 def multi_class_roc_auc_score(y_test, y_pred, average="macro"):

@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from src.data.loaders import DataLoader
+from word2morph.data.loaders import DataLoader
 
 
 class TestSampleDataset(TestCase):

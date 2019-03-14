@@ -1,6 +1,6 @@
 from typing import Optional, List
 
-from src.entities.sample import Segment, Sample
+from word2morph.entities.sample import Segment, Sample
 
 
 class DataLoader(object):

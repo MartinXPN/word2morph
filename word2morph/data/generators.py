@@ -2,7 +2,7 @@ from typing import Tuple, Generator
 
 import numpy as np
 
-from src.entities.dataset import Dataset
+from word2morph.entities.dataset import Dataset
 from .processing import DataProcessor
 
 

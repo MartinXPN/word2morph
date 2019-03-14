@@ -15,17 +15,17 @@ from keras.callbacks import ModelCheckpoint, TensorBoard
 from keras.optimizers import Adam
 from sklearn.utils import class_weight
 
-from src.data.generators import DataGenerator
-from src.data.loaders import DataLoader
-from src.data.mappings import CharToIdMapping, WordSegmentTypeToIdMapping, BMESToIdMapping, LabelToIdMapping
-from src.data.processing import DataProcessor
-from src.entities.dataset import BucketDataset, Dataset
-from src.models.cnn import CNNModel
-from src.models.rnn import RNNModel
-from src.util.args import map_arguments
-from src.util.filesystem import save_file
-from src.util.heuristics import ComparableEarlyStopping
-from src.util.metrics import Evaluate
+from word2morph.data.generators import DataGenerator
+from word2morph.data.loaders import DataLoader
+from word2morph.data.mappings import CharToIdMapping, WordSegmentTypeToIdMapping, BMESToIdMapping, LabelToIdMapping
+from word2morph.data.processing import DataProcessor
+from word2morph.entities.dataset import BucketDataset, Dataset
+from word2morph.models.cnn import CNNModel
+from word2morph.models.rnn import RNNModel
+from word2morph.util.args import map_arguments
+from word2morph.util.filesystem import save_file
+from word2morph.util.heuristics import ComparableEarlyStopping
+from word2morph.util.metrics import Evaluate
 
 
 class Gym(object):

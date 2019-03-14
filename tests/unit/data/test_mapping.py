@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from src.data.mappings import CharToIdMapping, WordSegmentTypeToIdMapping, LabelToIdMapping
+from word2morph.data.mappings import CharToIdMapping, WordSegmentTypeToIdMapping, LabelToIdMapping
 
 
 class TestCharMappings(TestCase):

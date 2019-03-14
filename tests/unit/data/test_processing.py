@@ -1,9 +1,9 @@
 import numpy as np
 from unittest import TestCase
 
-from src.data.mappings import CharToIdMapping, WordSegmentTypeToIdMapping, BMESToIdMapping
-from src.data.processing import DataProcessor
-from src.entities.sample import Sample, Segment
+from word2morph.data.mappings import CharToIdMapping, WordSegmentTypeToIdMapping, BMESToIdMapping
+from word2morph.data.processing import DataProcessor
+from word2morph.entities.sample import Sample, Segment
 
 
 class TestPreProcessing(TestCase):
