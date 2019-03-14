@@ -1,4 +1,3 @@
-import io
 import pickle
 from typing import Iterable, List, Tuple, Union
 
@@ -80,7 +79,7 @@ def predict(model_path: str, processor_path: str, batch_size: int = 1,
             input_path='datasets/rus.test', output_path='logs/rus.predictions'):
     word2morph = Word2Morph(model_path=model_path, processor_path=processor_path)
     correct, wrong, predicted_samples = word2morph.evaluate(inputs=input_path, batch_size=batch_size)
-    with io.open(output_path, 'w', encoding='utf-8') as f:
+    with open(output_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join([str(sample) for sample in predicted_samples]))
 
 
