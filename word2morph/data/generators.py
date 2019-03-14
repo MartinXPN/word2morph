@@ -20,15 +20,9 @@ class DataGenerator(object):
             self.dataset.shuffle()
 
     def __iter__(self) -> Generator[Tuple[np.ndarray, np.ndarray], None, None]:
-        num_samples = len(self.dataset)
-        for start in range(0, num_samples, self.batch_size):
-            end = start + self.batch_size
-            batch = self.dataset[start: end]
-            current_batch = self.processor.parse(data=batch)
-
-            start += self.batch_size
-            start %= len(self.dataset)
-            yield current_batch
+        for start in range(0, len(self.dataset), self.batch_size):
+            batch = self.dataset[start: start + self.batch_size]
+            yield self.processor.parse(data=batch)
 
     def __len__(self):
         if len(self.dataset) % self.batch_size == 0:
