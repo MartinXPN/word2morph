@@ -74,6 +74,13 @@ class Word2Morph(object):
         print('Word accuracy after filtering only valid combinations:', len(correct) / len(inputs), flush=True)
         return correct, wrong, predicted_samples
 
+    def __getitem__(self, item: Union[str, Sample]) -> Sample:
+        if self.model is None or self.processor is None:
+            return Sample('', tuple())
+
+        inputs = Sample(word=item, segments=tuple()) if type(item) == str else item
+        return self.predict(inputs=inputs, batch_size=1)[0]
+
 
 def predict(model_path: str, processor_path: str, batch_size: int = 1,
             input_path='datasets/rus.test', output_path='logs/rus.predictions'):
