@@ -23,10 +23,11 @@ class Word2Morph(object):
         with open(processor_path, 'rb') as f:
             self.processor: DataProcessor = pickle.load(file=f)
 
-    def predict(self, inputs: Union[str, Iterable[Sample]], batch_size: int) -> List[Sample]:
+    def predict(self, inputs: Union[str, Iterable[Sample]], batch_size: int, verbose: int = 0) -> List[Sample]:
         """
         :param inputs: either a string to a file or List of Sample-s
         :param batch_size: batch size in which to process the data
+        :param verbose: verbosity 0 or 1
         :return: Predicted samples in the order they were given as an input
         """
         if type(inputs) == str:
@@ -34,7 +35,7 @@ class Word2Morph(object):
 
         dataset: Dataset = Dataset(samples=inputs)
         predicted_samples: List[Sample] = []
-        for batch_start in tqdm(range(0, len(dataset), batch_size)):
+        for batch_start in tqdm(range(0, len(dataset), batch_size)) if verbose else range(0, len(dataset), batch_size):
             batch = dataset[batch_start: batch_start + batch_size]
             inputs, _ = self.processor.parse(batch, convert_one_hot=False)
             res: np.ndarray = self.model.predict(x=inputs)
@@ -64,7 +65,7 @@ class Word2Morph(object):
         evaluate.on_epoch_end(epoch=0)
 
         ''' Predict the result and print '''
-        predicted_samples = self.predict(inputs=inputs, batch_size=batch_size)
+        predicted_samples = self.predict(inputs=inputs, batch_size=batch_size, verbose=1)
         correct, wrong = [], []
         for correct_sample, predicted_sample in zip(inputs, predicted_samples):
             if predicted_sample == correct_sample:
@@ -75,11 +76,8 @@ class Word2Morph(object):
         return correct, wrong, predicted_samples
 
     def __getitem__(self, item: Union[str, Sample]) -> Sample:
-        if self.model is None or self.processor is None:
-            return Sample('', tuple())
-
         inputs = Sample(word=item, segments=tuple()) if type(item) == str else item
-        return self.predict(inputs=inputs, batch_size=1)[0]
+        return self.predict(inputs=[inputs], batch_size=1, verbose=0)[0]
 
 
 def predict(model_path: str, processor_path: str, batch_size: int = 1,

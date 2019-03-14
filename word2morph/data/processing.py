@@ -49,7 +49,7 @@ class DataProcessor(object):
                 y += [self.segment_to_label(self.bmes_mapping.MID, segment_type) for _ in word_segment[1: -1]]
                 y.append(self.segment_to_label(self.bmes_mapping.END, segment_type))
 
-        assert len(x) == len(y)
+        assert len(x) == len(y) or len(y) == 0
         return np.array(x, dtype=np.int32), np.array(y, dtype=np.int32)
 
     def parse(self, data: List[Sample], convert_one_hot: bool=True) -> Tuple[np.ndarray, np.ndarray]:
@@ -61,7 +61,7 @@ class DataProcessor(object):
 
         inputs = pad_sequences(inputs, truncating='post')
         labels = pad_sequences(labels, truncating='post')
-        assert inputs.shape == labels.shape
+        assert inputs.shape == labels.shape or labels.shape[1] == 0
         if convert_one_hot:
             labels = np.eye(self.nb_classes())[labels]
         return inputs, labels
