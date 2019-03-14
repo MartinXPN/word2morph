@@ -25,6 +25,12 @@ python -m word2morph.predict
 ```
 
 
+## Pypi package
+```commandline
+python setup.py upload
+```
+
+
 #### TODO
 * Evaluate results after post-processing
 * Improve post-processing step
