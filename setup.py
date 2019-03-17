@@ -12,7 +12,7 @@ URL = 'https://github.com/MartinXPN/word2morph'
 EMAIL = 'mirakyanmartin@gmail.com'
 AUTHOR = 'Martin Mirakyan'
 REQUIRES_PYTHON = '>=3.6.0'
-VERSION = '1.0.3'
+VERSION = '1.0.4'
 
 # What packages are required for this module to be executed?
 with open('requirements.txt') as f:

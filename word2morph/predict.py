@@ -76,8 +76,10 @@ class Word2Morph(object):
         return correct, wrong, predicted_samples
 
     def __getitem__(self, item: Union[str, Sample]) -> Sample:
-        inputs = Sample(word=item, segments=tuple()) if type(item) == str else item
-        return self.predict(inputs=[inputs], batch_size=1, verbose=0)[0]
+        sample = Sample(word=item, segments=tuple()) if type(item) == str else item
+        inputs, _ = self.processor.parse_one(sample=sample)
+        prediction: np.ndarray = self.model.predict(x=np.array([inputs]))[0]
+        return self.processor.to_sample(word=sample.word, prediction=prediction)
 
 
 def predict(model_path: str, processor_path: str, batch_size: int = 1,
