@@ -11,6 +11,7 @@ h5py==2.9.0
 ipykernel==5.1.0
 ipython==7.2.0
 ipython-genutils==0.2.0
+joblib==0.13.2
 jedi==0.13.2
 jupyter-client==5.2.4
 jupyter-core==4.4.0
