@@ -25,7 +25,7 @@ from word2morph.entities.dataset import BucketDataset, Dataset
 from word2morph.models.cnn import CNNModel
 from word2morph.models.rnn import RNNModel
 from word2morph.util.args import map_arguments
-from word2morph.util.callbacks import ComparableEarlyStopping
+from word2morph.util.callbacks import ComparableEarlyStopping, Checkpoint
 from word2morph.util.metrics import Evaluate
 
 
@@ -129,8 +129,8 @@ class Gym(object):
 
         ''' Save all the objects/parameters for reproducibility '''
         log_dir = os.path.join(log_dir, datetime.now().replace(microsecond=0).isoformat())
-        models_dir = os.path.join(log_dir, 'checkpoints/')
-        os.makedirs(models_dir)
+        model_path = os.path.join(log_dir, 'checkpoints/best-model.joblib')
+        os.makedirs(model_path)
         np.savetxt(fname=os.path.join(log_dir, 'commandline.txt'), X=sys.argv, fmt='%s')
         np.savetxt(fname=os.path.join(log_dir, 'params.txt'), X=[json.dumps(self.params, indent=4, sort_keys=True)], fmt='%s')
 
@@ -143,13 +143,12 @@ class Gym(object):
             epochs=epochs,
             callbacks=[Evaluate(data_generator=itertools.cycle(valid_generator), nb_steps=len(valid_generator)),
                        TensorBoard(log_dir=log_dir),
+                       Checkpoint(on_save_callback=(lambda: Word2Morph(model=self.model, processor=self.processor).save(model_path)) if save_best else lambda: None, monitor=monitor_metric, save_best_only=True, verbose=1),
                        ComparableEarlyStopping(to_compare_values=best_training_curve, monitor=monitor_metric, patience=patience),
-                       EarlyStopping(monitor=monitor_metric, patience=patience, restore_best_weights=True)],
+                       EarlyStopping(monitor=monitor_metric, patience=patience)],
             class_weight=self.class_weights,
         )
 
-        if save_best:
-            Word2Morph(model=self.model, processor=self.processor).save(os.path.join(models_dir, 'best-model.joblib'))
         return history.history
 
     def run(self, **kwargs: Dict):
