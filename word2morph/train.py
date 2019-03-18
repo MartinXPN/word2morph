@@ -1,5 +1,6 @@
 import gc
 import itertools
+import json
 import os
 import random
 import sys
@@ -11,10 +12,11 @@ import fire
 import numpy as np
 from keras import Model
 from keras import backend as K
-from keras.callbacks import ModelCheckpoint, TensorBoard
+from keras.callbacks import TensorBoard, EarlyStopping
 from keras.optimizers import Adam
 from sklearn.utils import class_weight
 
+from word2morph import Word2Morph
 from word2morph.data.generators import DataGenerator
 from word2morph.data.loaders import DataLoader
 from word2morph.data.mappings import CharToIdMapping, WordSegmentTypeToIdMapping, BMESToIdMapping, LabelToIdMapping
@@ -23,8 +25,7 @@ from word2morph.entities.dataset import BucketDataset, Dataset
 from word2morph.models.cnn import CNNModel
 from word2morph.models.rnn import RNNModel
 from word2morph.util.args import map_arguments
-from word2morph.util.filesystem import save_file
-from word2morph.util.heuristics import ComparableEarlyStopping
+from word2morph.util.callbacks import ComparableEarlyStopping
 from word2morph.util.metrics import Evaluate
 
 
@@ -122,7 +123,7 @@ class Gym(object):
         return self
 
     def train(self, batch_size: int = 32, epochs: int = 100, patience: int = 10,
-              best_training_curve: Optional[List[float]] = None,
+              best_training_curve: Optional[List[float]] = None, save_best: bool = True,
               monitor_metric: str = 'val_acc', log_dir: str = 'logs'):
         self.params.update(locals()), self.params.pop('self'), self.params.pop('best_training_curve')
 
@@ -130,9 +131,8 @@ class Gym(object):
         log_dir = os.path.join(log_dir, datetime.now().replace(microsecond=0).isoformat())
         models_dir = os.path.join(log_dir, 'checkpoints/')
         os.makedirs(models_dir)
-        save_file(os.path.join(log_dir, 'commandline.txt'), obj=sys.argv, save_pickled=False)
-        save_file(os.path.join(log_dir, 'params.txt'), obj=self.params, save_pickled=False)
-        save_file(os.path.join(log_dir, 'processor.pkl'), obj=self.processor, save_pickled=True)
+        np.savetxt(fname=os.path.join(log_dir, 'commandline.txt'), X=sys.argv, fmt='%s')
+        np.savetxt(fname=os.path.join(log_dir, 'params.txt'), X=[json.dumps(self.params, indent=4, sort_keys=True)], fmt='%s')
 
         train_generator = DataGenerator(dataset=self.train_dataset, processor=self.processor, batch_size=batch_size)
         valid_generator = DataGenerator(dataset=self.valid_dataset, processor=self.processor, batch_size=batch_size)
@@ -143,11 +143,13 @@ class Gym(object):
             epochs=epochs,
             callbacks=[Evaluate(data_generator=itertools.cycle(valid_generator), nb_steps=len(valid_generator)),
                        TensorBoard(log_dir=log_dir),
-                       ModelCheckpoint(filepath=os.path.join(models_dir, '{epoch:02d}-loss-{val_loss:.2f}.hdf5'),
-                                       monitor=monitor_metric, save_best_only=True, verbose=1),
-                       ComparableEarlyStopping(to_compare_values=best_training_curve, monitor=monitor_metric, patience=patience)],
+                       ComparableEarlyStopping(to_compare_values=best_training_curve, monitor=monitor_metric, patience=patience),
+                       EarlyStopping(monitor=monitor_metric, patience=patience, restore_best_weights=True)],
             class_weight=self.class_weights,
         )
+
+        if save_best:
+            Word2Morph(model=self.model, processor=self.processor).save(os.path.join(models_dir, 'best-model.joblib'))
         return history.history
 
     def run(self, **kwargs: Dict):

@@ -59,7 +59,7 @@ class HyperparameterSearchGym(Gym):
                                   for key, value in parameters.items()}
             transformed_params.update(model_type=model_choice, epochs=epochs, patience=patience, log_dir=log_dir,
                                       monitor_metric=monitor_metric,
-                                      best_training_curve=best_training_curve[model_choice])
+                                      best_training_curve=best_training_curve[model_choice], save_best=False)
 
             print('\n\n\nTraining the model: {} with hyperparameters: {}'.format(model_choice, transformed_params))
             self.construct_model(**map_arguments(self.construct_model, transformed_params))

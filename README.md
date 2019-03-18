@@ -20,7 +20,7 @@ python -m word2morph.hyperparametersearch
 ### Predict on test data
 ```commandline
 python -m word2morph.predict
-        --model_path logs/<timestamp>/checkpoints/<modelname.hdf5> --processor_path logs/<timestamp>/processor.pkl
+        --model_path logs/<timestamp>/checkpoints/<modelname.joblib>
         --batch_size 80 --input_path path_to_input.txt --output_path path_to_output.txt
 ```
 
