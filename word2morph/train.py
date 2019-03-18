@@ -1,11 +1,11 @@
 import gc
 import itertools
 import json
-import os
 import random
 import sys
 from datetime import datetime
 from itertools import chain
+from pathlib import Path
 from typing import Tuple, Dict, List, Optional
 
 import fire
@@ -128,11 +128,11 @@ class Gym(object):
         self.params.update(locals()), self.params.pop('self'), self.params.pop('best_training_curve')
 
         ''' Save all the objects/parameters for reproducibility '''
-        log_dir = os.path.join(log_dir, datetime.now().replace(microsecond=0).isoformat())
-        model_path = os.path.join(log_dir, 'checkpoints/best-model.joblib')
-        os.makedirs(model_path)
-        np.savetxt(fname=os.path.join(log_dir, 'commandline.txt'), X=sys.argv, fmt='%s')
-        np.savetxt(fname=os.path.join(log_dir, 'params.txt'), X=[json.dumps(self.params, indent=4, sort_keys=True)], fmt='%s')
+        log_dir = Path(log_dir).joinpath(datetime.now().replace(microsecond=0).isoformat())
+        model_path = Path(log_dir).joinpath('checkpoints').joinpath("best-model.joblib")
+        model_path.parent.mkdir(parents=True, exist_ok=True)
+        np.savetxt(fname=Path(log_dir).joinpath('commandline.txt'), X=sys.argv, fmt='%s')
+        np.savetxt(fname=Path(log_dir).joinpath('params.txt'), X=[json.dumps(self.params, indent=4, sort_keys=True)], fmt='%s')
 
         train_generator = DataGenerator(dataset=self.train_dataset, processor=self.processor, batch_size=batch_size)
         valid_generator = DataGenerator(dataset=self.valid_dataset, processor=self.processor, batch_size=batch_size)
