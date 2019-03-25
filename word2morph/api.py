@@ -1,3 +1,5 @@
+import urllib.request
+from pathlib import Path
 from typing import List, Tuple, Union
 
 import joblib
@@ -13,6 +15,9 @@ from word2morph.entities.sample import Sample
 from word2morph.models.cnn import CNNModel
 from word2morph.models.rnn import RNNModel
 from word2morph.util.metrics import Evaluate
+from word2morph.util.utils import DownloadProgressBar
+
+BASE_URL = 'https://github.com/MartinXPN/word2morph/releases/download'
 
 
 class Word2Morph(object):
@@ -76,6 +81,22 @@ class Word2Morph(object):
         joblib.dump(self, filename=path, compress=('lzma', 3))
 
     @staticmethod
-    def load_model(model_path: str) -> 'Word2Morph':
+    def load_model(path: str = None, url: str = None, locale: str = None, version: str = None) -> 'Word2Morph':
+        from word2morph import __version__
+
+        if locale:
+            version = version or __version__
+            url = '{BASE_URL}/v{version}/{locale}.joblib'.format(BASE_URL=BASE_URL, version=version, locale=locale)
+            path = path or 'logs/{locale}-{version}.joblib'.format(locale=locale, version=version)
+
+        if url and path:
+            if not Path(path).exists():
+                with DownloadProgressBar(unit='B', unit_scale=True, miniters=1, desc=url.split('/')[-1]) as t:
+                    urllib.request.urlretrieve(url=url, filename=path, reporthook=t.update_to)
+            else:
+                print('Model already exists. Loading an existing file...')
+        elif url:
+            raise ValueError('Both URL and save path needs to be specified!')
+
         with CustomObjectScope({'CNNModel': CNNModel, 'RNNModel': RNNModel}):
-            return joblib.load(filename=model_path)
+            return joblib.load(filename=path)
