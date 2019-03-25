@@ -75,7 +75,7 @@ class Word2Morph(object):
     def save(self, path):
         joblib.dump(self, filename=path, compress=('lzma', 3))
 
-
-def load_model(model_path: str) -> Word2Morph:
-    with CustomObjectScope({'CNNModel': CNNModel, 'RNNModel': RNNModel}):
-        return joblib.load(filename=model_path)
+    @staticmethod
+    def load_model(model_path: str) -> 'Word2Morph':
+        with CustomObjectScope({'CNNModel': CNNModel, 'RNNModel': RNNModel}):
+            return joblib.load(filename=model_path)

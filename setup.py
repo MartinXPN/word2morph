@@ -5,6 +5,8 @@ from shutil import rmtree
 
 from setuptools import find_packages, setup, Command
 
+from word2morph import __version__
+
 # Package meta-data.
 NAME = 'word2morph'
 DESCRIPTION = 'Python package for neural morpheme extraction from words'
@@ -12,7 +14,7 @@ URL = 'https://github.com/MartinXPN/word2morph'
 EMAIL = 'mirakyanmartin@gmail.com'
 AUTHOR = 'Martin Mirakyan'
 REQUIRES_PYTHON = '>=3.6.0'
-VERSION = '1.1.0'
+VERSION = __version__
 
 # What packages are required for this module to be executed?
 with open('requirements.txt') as f:
