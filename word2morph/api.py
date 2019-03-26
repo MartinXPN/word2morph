@@ -1,6 +1,4 @@
-import urllib.request
-from pathlib import Path
-from typing import List, Tuple, Union
+from typing import List, Tuple, overload
 
 import joblib
 import numpy as np
@@ -15,7 +13,7 @@ from word2morph.entities.sample import Sample
 from word2morph.models.cnn import CNNModel
 from word2morph.models.rnn import RNNModel
 from word2morph.util.metrics import Evaluate
-from word2morph.util.utils import DownloadProgressBar
+from word2morph.util.utils import download
 
 BASE_URL = 'https://github.com/MartinXPN/word2morph/releases/download'
 
@@ -71,7 +69,15 @@ class Word2Morph(object):
         print('Word accuracy after filtering only valid combinations:', len(correct) / len(inputs), flush=True)
         return correct, wrong, predicted_samples
 
-    def __getitem__(self, item: Union[str, Sample]) -> Sample:
+    @overload
+    def __getitem__(self, item: str) -> Sample:
+        ...
+
+    @overload
+    def __getitem__(self, item: Sample) -> Sample:
+        ...
+
+    def __getitem__(self, item) -> Sample:
         sample = Sample(word=item, segments=tuple()) if type(item) == str else item
         inputs, _ = self.processor.parse_one(sample=sample)
         prediction: np.ndarray = self.model.predict(x=np.array([inputs]))[0]
@@ -80,21 +86,32 @@ class Word2Morph(object):
     def save(self, path):
         joblib.dump(self, filename=path, compress=('lzma', 3))
 
-    @staticmethod
-    def load_model(path: str = None, url: str = None, locale: str = None, version: str = None) -> 'Word2Morph':
+    @classmethod
+    @overload
+    def load_model(cls, path: str) -> 'Word2Morph':
+        ...
+
+    @classmethod
+    @overload
+    def load_model(cls, url: str, path: str) -> 'Word2Morph':
+        ...
+
+    @classmethod
+    @overload
+    def load_model(cls, locale: str, version: str = None) -> 'Word2Morph':
+        ...
+
+    @classmethod
+    def load_model(cls, path: str = None, url: str = None, locale: str = None, version: str = None) -> 'Word2Morph':
         from word2morph import __version__
 
         if locale:
             version = version or __version__
-            url = '{BASE_URL}/v{version}/{locale}.joblib'.format(BASE_URL=BASE_URL, version=version, locale=locale)
-            path = path or 'logs/{locale}-{version}.joblib'.format(locale=locale, version=version)
+            url = f'{BASE_URL}/v{version}/{locale}.joblib'
+            path = path or f'logs/{locale}-{version}.joblib'
 
         if url and path:
-            if not Path(path).exists():
-                with DownloadProgressBar(unit='B', unit_scale=True, miniters=1, desc=url.split('/')[-1]) as t:
-                    urllib.request.urlretrieve(url=url, filename=path, reporthook=t.update_to)
-            else:
-                print('Model already exists. Loading an existing file...')
+            download(url, path, exists_ok=True)
         elif url:
             raise ValueError('Both URL and save path needs to be specified!')
 
