@@ -17,9 +17,17 @@ REQUIRES_PYTHON = '>=3.6.0'
 VERSION = __version__
 
 # What packages are required for this module to be executed?
-with open('requirements.txt') as f:
-    install_requires = f.readlines()
-REQUIRED = install_requires
+REQUIRED = [
+    'baytune>=0.2.4',
+    'fire>=0.1.3',
+    'joblib>=0.13.2',
+    'jupyter-core>=4.4.0',
+    'Keras>=2.2.4',
+    'numpy>=1.16.1',
+    'scikit-learn>=0.20.2',
+    'tensorflow>=1.12.0',
+    'tqdm>=4.31.1',
+]
 
 # What packages are optional?
 EXTRAS = {
