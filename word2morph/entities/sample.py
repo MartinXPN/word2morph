@@ -8,7 +8,9 @@ class Segment(object):
         self.type = segment_type    # ROOT
 
     def __str__(self):
-        return '{}:{}'.format(self.segment, self.type)
+        if self.type is None:
+            return f'{self.segment}'
+        return f'{self.segment}:{self.type}'
 
     def __eq__(self, other: 'Segment') -> bool:
         return self.segment == other.segment and self.type == other.type
@@ -30,7 +32,8 @@ class Sample(object):
         return tuple([segment.segment for segment in self.segments])
 
     def __str__(self):
-        return '{}\t{}'.format(self.word, '/'.join([str(segment) for segment in self.segments]))
+        segments_str = '/'.join([str(segment) for segment in self.segments])
+        return f'{self.word}\t{segments_str}'
 
     def __eq__(self, other: 'Sample') -> bool:
         return self.word == other.word and self.segments == other.segments

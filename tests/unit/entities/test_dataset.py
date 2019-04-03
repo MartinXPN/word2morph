@@ -23,9 +23,8 @@ class TestBucketDataset(TestCase):
                                                     'akpmowledging\tac/knowledg/ing',
                                                     'anowledging\tac/knowledg/ing',
                                                     'defections\tdefect/ion/s']).load())
-        print('\n')
-        print(dataset.data)
-        print([(item[0], [line.split('\t')[0] for line in item[1]]) for item in dataset.buckets.items()])
+
+        print([(length, [str(sample) for sample in samples]) for length, samples in dataset.buckets.items()])
         print([(item[0], len(item[1])) for item in dataset.buckets.items()])
 
         before_shuffling_length = len(dataset)
@@ -33,9 +32,7 @@ class TestBucketDataset(TestCase):
         self.assertEqual(len(dataset), before_shuffling_length)
 
         print([(item[0], len(item[1])) for item in dataset.buckets.items()])
-        print([(item[0], [line.split('\t')[0] for line in item[1]]) for item in dataset.buckets.items()])
+        print([(length, [str(sample) for sample in samples]) for length, samples in dataset.buckets.items()])
 
         self.assertEqual(len(dataset.buckets[13]), 3)
         self.assertEqual(len(dataset.buckets[11]), 2)
-
-        print(dataset.data)
