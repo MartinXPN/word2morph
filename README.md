@@ -1,5 +1,7 @@
 # WordSegmentation
 
+[![Build Status](https://travis-ci.com/MartinXPN/word2morph.svg?branch=master)](https://travis-ci.com/MartinXPN/word2morph)
+
 ### Usage - train a model
 ```commandline
 PYTHONHASHSEED=0 python -m word2morph.train
