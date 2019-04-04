@@ -1,7 +1,6 @@
 import gc
 import itertools
 import json
-import random
 import sys
 from datetime import datetime
 from itertools import chain
@@ -14,6 +13,8 @@ from keras import Model
 from keras import backend as K
 from keras.callbacks import TensorBoard, EarlyStopping
 from keras.optimizers import Adam
+from keras_contrib.losses import crf_loss
+from keras_contrib.metrics import crf_viterbi_accuracy
 from sklearn.utils import class_weight
 
 from word2morph import Word2Morph
@@ -41,19 +42,6 @@ class Gym(object):
         self.processor: DataProcessor = None
         self.class_weights: Dict = None
         self.params: Dict = {}
-
-    def fix_random_seed(self, seed: int):
-        """ Fix random seed for reproducibility """
-        self.params.update(locals())
-        random.seed(seed)
-        np.random.seed(seed)
-        try:
-            # noinspection PyUnresolvedReferences
-            import tensorflow
-            tensorflow.set_random_seed(seed)
-        except ImportError:
-            pass
-        return self
 
     def init_data(self, train_path: str = 'datasets/rus.train', valid_path: str = 'datasets/rus.test'):
         self.params.update(locals())
@@ -86,12 +74,13 @@ class Gym(object):
 
     def construct_model(self,
                         model_type: str = 'CNN',
-                        embeddings_size: int=8,
-                        kernel_sizes: Tuple[int, ...]=(5, 5, 5),
-                        nb_filters: Tuple[int, ...]=(192, 192, 192),
+                        embeddings_size: int = 8,
+                        kernel_sizes: Tuple[int, ...] = (5, 5, 5),
+                        nb_filters: Tuple[int, ...] = (192, 192, 192),
                         recurrent_units: Tuple[int, ...] = (64, 128, 256),
-                        dense_output_units: int=64,
-                        dropout: float=0.2):
+                        dense_output_units: int = 64,
+                        use_crf: bool = True,
+                        dropout: float = 0.2):
         self.params.update(locals())
 
         # Clean-up the keras session before constructing a new model
@@ -118,7 +107,9 @@ class Gym(object):
         else:
             raise ValueError('Cannot find implementation for the model type {}'.format(model_type))
 
-        self.model.compile(optimizer=Adam(clipnorm=5.0), loss='categorical_crossentropy', metrics=['acc'])
+        loss = crf_loss if use_crf else 'categorical_crossentropy'
+        metrics = [crf_viterbi_accuracy] if use_crf else ['acc']
+        self.model.compile(optimizer=Adam(clipnorm=5.0), loss=loss, metrics=metrics)
         self.model.summary()
         return self
 
@@ -152,8 +143,7 @@ class Gym(object):
         return history.history
 
     def run(self, **kwargs: Dict):
-        self.fix_random_seed(**map_arguments(self.fix_random_seed, kwargs)) \
-            .init_data(**map_arguments(self.init_data, kwargs)) \
+        self.init_data(**map_arguments(self.init_data, kwargs)) \
             .construct_model(**map_arguments(self.construct_model, kwargs)) \
             .train(**map_arguments(self.train, kwargs))
 

@@ -4,6 +4,9 @@ import joblib
 import numpy as np
 from keras import Model
 from keras.utils import CustomObjectScope
+from keras_contrib.layers import CRF
+from keras_contrib.losses import crf_loss
+from keras_contrib.metrics import crf_viterbi_accuracy
 from tqdm import tqdm
 
 from word2morph.data.generators import DataGenerator
@@ -115,5 +118,6 @@ class Word2Morph(object):
         elif url:
             raise ValueError('Both URL and save path needs to be specified!')
 
-        with CustomObjectScope({'CNNModel': CNNModel, 'RNNModel': RNNModel}):
+        with CustomObjectScope({'CNNModel': CNNModel, 'RNNModel': RNNModel,
+                                'CRF': CRF, 'crf_loss': crf_loss, 'crf_viterbi_accuracy': crf_viterbi_accuracy}):
             return joblib.load(filename=path)

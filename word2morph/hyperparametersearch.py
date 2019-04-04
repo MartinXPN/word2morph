@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import fire
 import numpy as np
 from btb import HyperParameter, ParamTypes
@@ -23,24 +25,25 @@ class HyperparameterSearchGym(Gym):
     def __init__(self):
         super(HyperparameterSearchGym, self).__init__()
 
+        generic_params = [
+            ('use_crf', HyperParameter(ParamTypes.BOOL, [True, False])),
+            ('dense_output_units', HyperParameter(ParamTypes.INT, [16, 256])),
+            ('dropout', HyperParameter(ParamTypes.FLOAT, [0., 0.6])),
+            ('batch_size', HyperParameter(ParamTypes.INT, [4, 128])),
+        ]
+
         self.tuners = {
             'CNN': GP([
                 ('embeddings_size',     HyperParameter(ParamTypes.INT, [4, 18])),
                 ('kernel_sizes',        TupleHyperparameter(param_range=[(7, 7, 7, 7),          (5, 5, 5, 5),           (3, 3, 3, 3),           (5, 5, 3, 3),   (7, 5, 5, 3)])),
                 ('nb_filters',          TupleHyperparameter(param_range=[(192, 192, 192),       (232, 232, 232),        (192, 232, 256),        (64, 128, 256),
                                                                          (32, 64, 128, 256),    (64, 64, 128, 128),     (64, 128, 198, 256),    (32, 64, 64, 128)])),
-                ('dense_output_units',  HyperParameter(ParamTypes.INT, [16, 256])),
-                ('dropout',             HyperParameter(ParamTypes.FLOAT, [0., 0.6])),
-                ('batch_size',          HyperParameter(ParamTypes.INT, [4, 128])),
-            ]),
+            ] + deepcopy(generic_params)),
             'RNN': GP([
                 ('embeddings_size',     HyperParameter(ParamTypes.INT, [4, 18])),
                 ('recurrent_units',     TupleHyperparameter(param_range=[(64, 128),     (128, 256),     (256, 512),     (128, 128),     (256, 256),
                                                                          (32, 64, 64),  (32, 64, 128),  (64, 64, 128),  (64, 128, 256), (128, 128, 256)])),
-                ('dense_output_units',  HyperParameter(ParamTypes.INT, [16, 256])),
-                ('dropout',             HyperParameter(ParamTypes.FLOAT, [0., 0.6])),
-                ('batch_size',          HyperParameter(ParamTypes.INT, [4, 128])),
-            ])
+            ] + deepcopy(generic_params))
         }
         self.selector = UCB1(list(self.tuners.keys()))
 
