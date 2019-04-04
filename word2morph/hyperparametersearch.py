@@ -94,12 +94,12 @@ class HyperparameterSearchGym(Gym):
             best_epoch = np.argmax(history[monitor_metric])
             best_score = history[monitor_metric][best_epoch]
             best_score_so_far = np.max(best_training_curve[model_choice])
+            potential_improvement = max(0, best_training_curve[model_choice][best_epoch] - best_score)\
+                if len(best_training_curve[model_choice]) > best_epoch else 0
 
             if best_score_so_far < best_score:
                 best_training_curve[model_choice] = history[monitor_metric]
-
-            potential_improvement = np.max(best_training_curve[model_choice]) - best_training_curve[model_choice][best_epoch]
-            self.tuners[model_choice].add(transformed_params, best_score + potential_improvement)
+            self.tuners[model_choice].add(parameters, best_score + potential_improvement)
 
         for model_choice in self.tuners.keys():
             model = self.tuners[model_choice]
