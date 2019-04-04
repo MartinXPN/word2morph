@@ -115,6 +115,9 @@ setup(
     #     'console_scripts': ['mycli=mymodule:cli'],
     # },
     install_requires=REQUIRED,
+    dependency_links=[
+        'https://www.github.com/keras-team/keras-contrib.git#egg=keras-contrib-2.0.8',
+    ],
     extras_require=EXTRAS,
     include_package_data=True,
     license='MIT',
