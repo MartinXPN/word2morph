@@ -3,7 +3,6 @@ from copy import deepcopy
 import fire
 import numpy as np
 from btb import HyperParameter, ParamTypes
-from btb.hyper_parameter import CatHyperParameter
 from btb.selection import UCB1
 from btb.tuning import GP
 
@@ -11,68 +10,96 @@ from word2morph.train import Gym
 from word2morph.util.args import map_arguments
 
 
-class TupleHyperparameter(CatHyperParameter):
-    param_type = 10
-
-    def __new__(cls, param_type=None, param_range=None):
-        return object.__new__(cls)
-
-    def cast(self, value):
-        return tuple(value) if value is not None else None
-
-
 class HyperparameterSearchGym(Gym):
     def __init__(self):
         super(HyperparameterSearchGym, self).__init__()
 
         generic_params = [
-            ('use_crf', HyperParameter(ParamTypes.BOOL, [True, False])),
-            ('dense_output_units', HyperParameter(ParamTypes.INT, [16, 256])),
-            ('dropout', HyperParameter(ParamTypes.FLOAT, [0., 0.6])),
-            ('batch_size', HyperParameter(ParamTypes.INT, [4, 128])),
+            ('embeddings_size',         HyperParameter(ParamTypes.INT, [4, 18])),
+            ('dense_output_units',      HyperParameter(ParamTypes.INT, [16, 256])),
+            ('batch_size',              HyperParameter(ParamTypes.INT, [4, 128])),
+            ('dropout',                 HyperParameter(ParamTypes.FLOAT, [0., 0.6])),
+            ('use_crf',                 HyperParameter(ParamTypes.BOOL, [True, False])),
         ]
 
+        ''' CNN Models '''
+        cnn3 = [
+                   ('kernel_sizes-1',   HyperParameter(ParamTypes.INT, [3, 7])),
+                   ('kernel_sizes-2',   HyperParameter(ParamTypes.INT, [3, 7])),
+                   ('kernel_sizes-3',   HyperParameter(ParamTypes.INT, [3, 7])),
+                   ('nb_filters-1',     HyperParameter(ParamTypes.INT, [32, 384])),
+                   ('nb_filters-2',     HyperParameter(ParamTypes.INT, [32, 384])),
+                   ('nb_filters-3',     HyperParameter(ParamTypes.INT, [32, 384])),
+        ] + deepcopy(generic_params)
+        cnn4 = [
+            ('kernel_sizes-4',          HyperParameter(ParamTypes.INT, [3, 7])),
+            ('nb_filters-4',            HyperParameter(ParamTypes.INT, [32, 384])),
+        ] + deepcopy(cnn3)
+
+        ''' RNN Models '''
+        rnn2 = [
+            ('recurrent_units-1',       HyperParameter(ParamTypes.INT, [16, 512])),
+            ('recurrent_units-2',       HyperParameter(ParamTypes.INT, [16, 512])),
+        ] + deepcopy(generic_params)
+        rnn3 = [
+            ('recurrent_units-3',       HyperParameter(ParamTypes.INT, [16, 512])),
+        ] + deepcopy(rnn2)
+
         self.tuners = {
-            'CNN': GP([
-                ('embeddings_size',     HyperParameter(ParamTypes.INT, [4, 18])),
-                ('kernel_sizes',        TupleHyperparameter(param_range=[(7, 7, 7, 7),          (5, 5, 5, 5),           (3, 3, 3, 3),           (5, 5, 3, 3),   (7, 5, 5, 3)])),
-                ('nb_filters',          TupleHyperparameter(param_range=[(192, 192, 192),       (232, 232, 232),        (192, 232, 256),        (64, 128, 256),
-                                                                         (32, 64, 128, 256),    (64, 64, 128, 128),     (64, 128, 198, 256),    (32, 64, 64, 128)])),
-            ] + deepcopy(generic_params)),
-            'RNN': GP([
-                ('embeddings_size',     HyperParameter(ParamTypes.INT, [4, 18])),
-                ('recurrent_units',     TupleHyperparameter(param_range=[(64, 128),     (128, 256),     (256, 512),     (128, 128),     (256, 256),
-                                                                         (32, 64, 64),  (32, 64, 128),  (64, 64, 128),  (64, 128, 256), (128, 128, 256)])),
-            ] + deepcopy(generic_params))
+            'CNN-3': GP(cnn3),
+            'CNN-4': GP(cnn4),
+            'RNN-2': GP(rnn2),
+            'RNN-3': GP(rnn3),
         }
         self.selector = UCB1(list(self.tuners.keys()))
 
     def search_hyperparameters(self, nb_trials: int, epochs: int = 100, patience: int = 10,
                                monitor_metric: str = 'val_acc', log_dir: str = 'logs'):
-        best_training_curve = {key: None for key in self.tuners.keys()}
+        best_training_curve = {key: [0] * epochs for key in self.tuners.keys()}
         for trial in range(nb_trials):
-            model_choice = self.selector.select({
-                'CNN': self.tuners['CNN'].y,
-                'RNN': self.tuners['RNN'].y,
-            })
+            model_choice = self.selector.select({name: self.tuners[name].y for name in self.tuners.keys()})
             parameters = self.tuners[model_choice].propose()
 
-            ''' Construct and train the model with the selected parameters '''
-            transformed_params = {key: tuple(value.tolist()) if isinstance(value, np.ndarray) else value
-                                  for key, value in parameters.items()}
-            transformed_params.update(model_type=model_choice, epochs=epochs, patience=patience, log_dir=log_dir,
+            model_name, model_depth = model_choice.split('-')
+            model_depth = int(model_depth)
+
+            ''' transform parameters '''
+            transformed_params = {}
+            for key, value in parameters.items():
+                if isinstance(value, np.ndarray):
+                    value = tuple(value.tolist())
+                if isinstance(value, np.generic):
+                    value = value.item()
+
+                if '-' in key:
+                    feature_name, feature_depth = key.split('-')
+                    feature_depth = int(feature_depth) - 1
+                    if feature_name not in transformed_params:
+                        transformed_params[feature_name] = [None] * model_depth
+                    transformed_params[feature_name][feature_depth] = value
+                else:
+                    transformed_params[key] = value
+
+            transformed_params.update(model_type=model_name,
+                                      epochs=epochs, patience=patience, log_dir=log_dir,
                                       monitor_metric=monitor_metric,
                                       best_training_curve=best_training_curve[model_choice], save_best=False)
 
+            ''' Construct and train the model '''
             print('\n\n\nTraining the model: {} with hyperparameters: {}'.format(model_choice, transformed_params))
             self.construct_model(**map_arguments(self.construct_model, transformed_params))
             history = self.train(**map_arguments(self.train, transformed_params))
 
-            best_score = max(history[monitor_metric])
-            # noinspection PyProtectedMember
-            if self.tuners[model_choice]._best_score < best_score:
+            ''' Track results '''
+            best_epoch = np.argmax(history[monitor_metric])
+            best_score = history[monitor_metric][best_epoch]
+            best_score_so_far = np.max(best_training_curve[model_choice])
+
+            if best_score_so_far < best_score:
                 best_training_curve[model_choice] = history[monitor_metric]
-            self.tuners[model_choice].add(transformed_params, best_score)
+
+            potential_improvement = np.max(best_training_curve[model_choice]) - best_training_curve[model_choice][best_epoch]
+            self.tuners[model_choice].add(transformed_params, best_score + potential_improvement)
 
         for model_choice in self.tuners.keys():
             model = self.tuners[model_choice]
