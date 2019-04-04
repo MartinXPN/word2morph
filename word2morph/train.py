@@ -90,19 +90,16 @@ class Gym(object):
 
         model_type = model_type.upper()
         if model_type == 'CNN':
-            self.model = CNNModel(nb_symbols=len(self.char_mapping),
-                                  embeddings_size=embeddings_size,
-                                  kernel_sizes=kernel_sizes,
-                                  nb_filters=nb_filters,
+            self.model = CNNModel(nb_symbols=len(self.char_mapping), embeddings_size=embeddings_size,
+                                  kernel_sizes=kernel_sizes, nb_filters=nb_filters,
                                   dense_output_units=dense_output_units,
-                                  dropout=dropout,
+                                  dropout=dropout, use_crf=use_crf,
                                   nb_classes=self.processor.nb_classes())
         elif model_type == 'RNN':
-            self.model = RNNModel(nb_symbols=len(self.char_mapping),
-                                  embeddings_size=embeddings_size,
+            self.model = RNNModel(nb_symbols=len(self.char_mapping), embeddings_size=embeddings_size,
                                   recurrent_units=recurrent_units,
                                   dense_output_units=dense_output_units,
-                                  dropout=dropout,
+                                  dropout=dropout, use_crf=use_crf,
                                   nb_classes=self.processor.nb_classes())
         else:
             raise ValueError('Cannot find implementation for the model type {}'.format(model_type))
