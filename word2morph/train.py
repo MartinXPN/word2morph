@@ -1,4 +1,3 @@
-import gc
 import itertools
 import json
 import sys
@@ -8,10 +7,11 @@ from pathlib import Path
 from typing import Tuple, Dict, List, Optional
 
 import fire
+import gc
 import numpy as np
 from keras import Model
 from keras import backend as K
-from keras.callbacks import TensorBoard, EarlyStopping
+from keras.callbacks import EarlyStopping
 from keras.optimizers import Adam
 from keras_contrib.losses import crf_loss
 from keras_contrib.metrics import crf_viterbi_accuracy
@@ -26,7 +26,7 @@ from word2morph.entities.dataset import BucketDataset, Dataset
 from word2morph.models.cnn import CNNModel
 from word2morph.models.rnn import RNNModel
 from word2morph.util.args import map_arguments
-from word2morph.util.callbacks import ComparableEarlyStopping, Checkpoint
+from word2morph.util.callbacks import ComparableEarlyStopping, Checkpoint, ClassifierTensorBoard
 from word2morph.util.metrics import Evaluate
 
 
@@ -102,7 +102,7 @@ class Gym(object):
                                   dropout=dropout, use_crf=use_crf,
                                   nb_classes=self.processor.nb_classes())
         else:
-            raise ValueError('Cannot find implementation for the model type {}'.format(model_type))
+            raise ValueError(f'Cannot find implementation for the model type {model_type}')
 
         loss = crf_loss if use_crf else 'categorical_crossentropy'
         metrics = [crf_viterbi_accuracy] if use_crf else ['acc']
@@ -130,7 +130,7 @@ class Gym(object):
             steps_per_epoch=len(train_generator),
             epochs=epochs,
             callbacks=[Evaluate(data_generator=itertools.cycle(valid_generator), nb_steps=len(valid_generator)),
-                       TensorBoard(log_dir=log_dir),
+                       ClassifierTensorBoard(labels=[f'{k}: {i}' for k, i in self.label_mapping.key_to_id.items()], log_dir=log_dir),
                        Checkpoint(on_save_callback=(lambda: Word2Morph(model=self.model, processor=self.processor).save(model_path)) if save_best else lambda: None, monitor=monitor_metric, save_best_only=True, verbose=1),
                        ComparableEarlyStopping(to_compare_values=best_training_curve, monitor=monitor_metric, patience=patience),
                        EarlyStopping(monitor=monitor_metric, patience=patience)],
