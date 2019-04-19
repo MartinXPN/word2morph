@@ -1,5 +1,5 @@
 from pprint import pprint
-from typing import Tuple, List, Iterator
+from typing import Tuple, List, Iterator, Union
 
 import numpy as np
 from keras.callbacks import Callback
@@ -28,7 +28,7 @@ class Evaluate(Callback):
 
     def evaluate(self,
                  predictions: List[np.ndarray],
-                 labels: List[np.ndarray]) -> Tuple[np.ndarray, Tuple[Tuple[str, float], ...]]:
+                 labels: List[np.ndarray]) -> Tuple[Tuple[str, Union[float, np.ndarray]], ...]:
         """
         Calculates:
          * word-level accuracy
@@ -56,13 +56,14 @@ class Evaluate(Callback):
         char_labels = np.array(char_labels)
 
         t, p = np.argmax(char_labels, axis=1), np.argmax(char_predictions, axis=1)
-        return confusion_matrix(t, p), tuple([('word_acc', correct / nb_words),
-                                              ('acc', accuracy_score(t, p)),
-                                              ('loss', log_loss(char_labels, char_predictions)),
-                                              ('precision', precision_score(t, p, average='macro')),
-                                              ('recall', recall_score(t, p, average='macro')),
-                                              ('f1', f1_score(t, p, average='macro')),
-                                              ('auc', multi_class_roc_auc_score(t, p))])
+        return tuple([('confusion_matrix', confusion_matrix(t, p)),
+                      ('word_acc', correct / nb_words),
+                      ('acc', accuracy_score(t, p)),
+                      ('loss', log_loss(char_labels, char_predictions)),
+                      ('precision', precision_score(t, p, average='macro')),
+                      ('recall', recall_score(t, p, average='macro')),
+                      ('f1', f1_score(t, p, average='macro')),
+                      ('auc', multi_class_roc_auc_score(t, p))])
 
     def on_epoch_end(self, epoch, logs=None):
         logs = logs or {}
@@ -74,10 +75,9 @@ class Evaluate(Callback):
             epoch_labels.append(labels)
             epoch_predictions.append(predictions)
 
-        cf_matrix, metrics = self.evaluate(predictions=epoch_predictions, labels=epoch_labels)
+        metrics = self.evaluate(predictions=epoch_predictions, labels=epoch_labels)
         for metric_name, metric_value in metrics:
             logs[self.prepend_str + metric_name] = metric_value
 
-        print('\nEvaluating for epoch {}...'.format(epoch + 1))
-        print('Confusion Matrix:\n', cf_matrix)
-        pprint(logs)
+        print(f'\nEvaluating for epoch {epoch + 1}...')
+        pprint({k: v for k, v in logs.items() if isinstance(v, (int, float, str))})
