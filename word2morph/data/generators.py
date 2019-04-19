@@ -11,7 +11,7 @@ class DataGenerator(object):
                  dataset: Dataset,
                  processor: DataProcessor,
                  batch_size: int,
-                 shuffle: bool=True):
+                 shuffle: bool = True):
         self.dataset = dataset
         self.processor = processor
         self.batch_size = batch_size

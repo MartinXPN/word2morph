@@ -1,4 +1,4 @@
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
 import numpy as np
 from keras_preprocessing.sequence import pad_sequences
@@ -52,7 +52,7 @@ class DataProcessor(object):
         assert len(x) == len(y) or len(y) == 0
         return np.array(x, dtype=np.int32), np.array(y, dtype=np.int32)
 
-    def parse(self, data: List[Sample], convert_one_hot: bool=True) -> Tuple[np.ndarray, np.ndarray]:
+    def parse(self, data: List[Sample], convert_one_hot: bool = True) -> Tuple[np.ndarray, np.ndarray]:
         inputs, labels = [], []
         for sample in data:
             x, y = self.parse_one(sample=sample)
@@ -87,8 +87,8 @@ class DataProcessor(object):
 
         assert len(prediction.shape) == 2
         assert prediction.shape[0] >= len(word) and prediction.shape[1] == self.nb_classes()
-        current_seg: str = None
-        current_seg_type: str = None
+        current_seg: Optional[str] = None
+        current_seg_type: Optional[str] = None
         current_seg_start: int = 0
         segments: List[Segment] = []
 

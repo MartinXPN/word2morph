@@ -12,7 +12,7 @@ class Mapping(object):
 class KeyToIdMapping(Mapping):
     def __init__(self,
                  keys: Union[List[Union[str, int]], Set[Union[str, int]]],
-                 include_unknown: bool=True):
+                 include_unknown: bool = True):
 
         super(KeyToIdMapping, self).__init__()
         self.keys = [self.UNK] if include_unknown else []
@@ -36,10 +36,10 @@ class KeyToIdMapping(Mapping):
 
 class CharToIdMapping(KeyToIdMapping):
     def __init__(self,
-                 text: Optional[str]=None,
-                 words: Optional[Union[List[str], Set[str]]]=None,
-                 chars: Optional[List[str]]=None,
-                 include_unknown: bool=True):
+                 text: Optional[str] = None,
+                 words: Optional[Union[List[str], Set[str]]] = None,
+                 chars: Optional[List[str]] = None,
+                 include_unknown: bool = True):
 
         if text is None and words is None and chars is None:
             raise ValueError('Need to provide one of {text, words, chars}')
