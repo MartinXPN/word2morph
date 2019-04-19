@@ -86,7 +86,7 @@ class HyperparameterSearchGym(Gym):
                                       best_training_curve=best_training_curve[model_choice], save_best=False)
 
             ''' Construct and train the model '''
-            print('\n\n\nTraining the model: {} with hyperparameters: {}'.format(model_choice, transformed_params))
+            print(f'\n\n\nTraining the model: {model_choice} with hyperparameters: {transformed_params}')
             self.construct_model(**map_arguments(self.construct_model, transformed_params))
             history = self.train(**map_arguments(self.train, transformed_params))
 
@@ -104,9 +104,8 @@ class HyperparameterSearchGym(Gym):
         for model_choice in self.tuners.keys():
             model = self.tuners[model_choice]
             # noinspection PyProtectedMember
-            print('Best score for {} model: {} with hyperparameters: {}'.format(model_choice,
-                                                                                model._best_score,
-                                                                                model._best_hyperparams))
+            print(f'Best score for {model_choice} model: {model._best_score} '
+                  f'with hyperparameters: {model._best_hyperparams}')
 
 
 if __name__ == '__main__':

@@ -63,12 +63,9 @@ class Word2Morph(object):
 
         ''' Predict the result and print '''
         predicted_samples = self.predict(inputs=inputs, batch_size=batch_size, verbose=True)
-        correct, wrong = [], []
-        for correct_sample, predicted_sample in zip(inputs, predicted_samples):
-            if predicted_sample == correct_sample:
-                correct.append((predicted_sample, correct_sample))
-            else:
-                wrong.append((predicted_sample, correct_sample))
+        correct = [(pred, correct) for correct, pred in zip(inputs, predicted_samples) if pred == correct]
+        wrong = [(pred,   correct) for correct, pred in zip(inputs, predicted_samples) if pred != correct]
+
         print('Word accuracy after filtering only valid combinations:', len(correct) / len(inputs), flush=True)
         return correct, wrong, predicted_samples
 
