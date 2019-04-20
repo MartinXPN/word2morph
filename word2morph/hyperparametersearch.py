@@ -30,11 +30,15 @@ class HyperparameterSearchGym(Gym):
                    ('nb_filters-1',     HyperParameter(ParamTypes.INT, [32, 384])),
                    ('nb_filters-2',     HyperParameter(ParamTypes.INT, [32, 384])),
                    ('nb_filters-3',     HyperParameter(ParamTypes.INT, [32, 384])),
-        ] + deepcopy(generic_params)
+                   ('dilations-1',      HyperParameter(ParamTypes.INT, [1, 5])),
+                   ('dilations-2',      HyperParameter(ParamTypes.INT, [1, 5])),
+                   ('dilations-3',      HyperParameter(ParamTypes.INT, [1, 5])),
+               ] + deepcopy(generic_params)
         cnn4 = [
             ('kernel_sizes-4',          HyperParameter(ParamTypes.INT, [3, 7])),
             ('nb_filters-4',            HyperParameter(ParamTypes.INT, [32, 384])),
-        ] + deepcopy(cnn3)
+            ('dilations-4',             HyperParameter(ParamTypes.INT, [1, 5])),
+           ] + deepcopy(cnn3)
 
         ''' RNN Models '''
         rnn2 = [

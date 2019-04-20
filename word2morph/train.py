@@ -77,6 +77,7 @@ class Gym(object):
                         embeddings_size: int = 8,
                         kernel_sizes: Tuple[int, ...] = (5, 5, 5),
                         nb_filters: Tuple[int, ...] = (192, 192, 192),
+                        dilations: Tuple[int, ...] = (1, 1, 1),
                         recurrent_units: Tuple[int, ...] = (64, 128, 256),
                         dense_output_units: int = 64,
                         use_crf: bool = True,
@@ -91,7 +92,7 @@ class Gym(object):
         model_type = model_type.upper()
         if model_type == 'CNN':
             self.model = CNNModel(nb_symbols=len(self.char_mapping), embeddings_size=embeddings_size,
-                                  kernel_sizes=kernel_sizes, nb_filters=nb_filters,
+                                  kernel_sizes=kernel_sizes, nb_filters=nb_filters, dilations=dilations,
                                   dense_output_units=dense_output_units,
                                   dropout=dropout, use_crf=use_crf,
                                   nb_classes=self.processor.nb_classes())

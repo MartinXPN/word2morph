@@ -11,6 +11,7 @@ class CNNModel(Model):
                  embeddings_size: int = 8,
                  kernel_sizes: Tuple[int, ...] = (5, 5, 5),
                  nb_filters: Tuple[int, ...] = (192, 192, 192),
+                 dilations: Tuple[int, ...] = (1, 1, 1),
                  dense_output_units: int = 0,
                  dropout: float = 0.,
                  use_crf: bool = True,
@@ -24,10 +25,10 @@ class CNNModel(Model):
         char_embeddings = Embedding(nb_symbols, embeddings_size, name='char_embeddings')(net_input)
 
         x = char_embeddings
-        for kernel_size, filters in zip(kernel_sizes[:-1], nb_filters[:-1]):
-            x = Conv1D(filters, kernel_size, activation='relu', padding='same')(x)
+        for kernel_size, filters, dilation in zip(kernel_sizes[:-1], nb_filters[:-1], dilations[:-1]):
+            x = Conv1D(filters, kernel_size, activation='relu', padding='same', dilation_rate=dilation)(x)
             x = Dropout(dropout)(x)
-        x = Conv1D(nb_filters[-1], kernel_sizes[-1], activation='relu', padding='same')(x)
+        x = Conv1D(nb_filters[-1], kernel_sizes[-1], activation='relu', padding='same', dilation_rate=dilations[-1])(x)
 
         x = TimeDistributed(Dense(dense_output_units, activation='relu'), name='pre_output')(x) \
             if dense_output_units else x
