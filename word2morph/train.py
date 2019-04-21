@@ -130,7 +130,7 @@ class Gym(object):
             steps_per_epoch=len(train_generator),
             epochs=epochs,
             callbacks=[Evaluate(data_generator=itertools.cycle(valid_generator), nb_steps=len(valid_generator)),
-                       ClassifierTensorBoard(labels=[f'{k}: {i}' for k, i in self.label_mapping.key_to_id.items()], log_dir=log_dir),
+                       ClassifierTensorBoard(labels=[f'{bmes}: {seg_type}' for bmes, seg_type in self.label_mapping.keys], log_dir=log_dir),
                        Checkpoint(on_save_callback=(lambda: Word2Morph(model=self.model, processor=self.processor).save(model_path)) if save_best else lambda: None, monitor=monitor_metric, save_best_only=True, verbose=1),
                        ComparableEarlyStopping(to_compare_values=best_training_curve, monitor=monitor_metric, patience=patience),
                        EarlyStopping(monitor=monitor_metric, patience=patience)],
