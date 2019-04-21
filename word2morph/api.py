@@ -33,15 +33,14 @@ class Word2Morph(object):
         :param verbose: display progress or no
         :return: Predicted samples in the order they were given as an input
         """
-        dataset: Dataset = Dataset(samples=inputs)
-        predicted_samples: List[Sample] = []
-        for batch_start in tqdm(range(0, len(dataset), batch_size), disable=not verbose):
-            batch = dataset[batch_start: batch_start + batch_size]
-            inputs, _ = self.processor.parse(batch, convert_one_hot=False)
-            res: np.ndarray = self.model.predict(x=inputs)
+        data_generator = DataGenerator(dataset=Dataset(samples=inputs), processor=self.processor, batch_size=batch_size,
+                                       with_samples=True, shuffle=False)
 
+        predicted_samples: List[Sample] = []
+        for inputs, _, samples in tqdm(iter(data_generator), disable=not verbose):
+            predictions = self.model.predict(inputs)
             predicted_samples += [self.processor.to_sample(word=sample.word, prediction=prediction)
-                                  for sample, prediction in zip(batch, res)]
+                                  for sample, prediction in zip(samples, predictions)]
         return predicted_samples
 
     def evaluate(self, inputs: List[Sample], batch_size: int) -> Tuple[List[Tuple[Sample, Sample]],
@@ -54,9 +53,8 @@ class Word2Morph(object):
                     each list item is (predicted_sample, correct_sample)
         """
         ''' Show Evaluation metrics '''
-        data_generator: DataGenerator = DataGenerator(dataset=Dataset(samples=inputs),
-                                                      processor=self.processor,
-                                                      batch_size=batch_size)
+        data_generator: DataGenerator = DataGenerator(dataset=Dataset(samples=inputs), processor=self.processor,
+                                                      batch_size=batch_size, with_samples=False, shuffle=False)
         evaluate = Evaluate(data_generator=iter(data_generator), nb_steps=len(data_generator), prepend_str='test_')
         evaluate.model = self.model
         evaluate.on_epoch_end(epoch=0)
