@@ -65,8 +65,8 @@ class DataProcessor(object):
             inputs.append(x)
             labels.append(y)
 
-        inputs = pad_sequences(inputs, truncating='post')
-        labels = pad_sequences(labels, truncating='post')
+        inputs = pad_sequences(inputs, truncating='post', padding='post')
+        labels = pad_sequences(labels, truncating='post', padding='post')
         assert inputs.shape == labels.shape or labels.shape[1] == 0
         if convert_one_hot:
             labels = np.eye(self.nb_classes())[labels]

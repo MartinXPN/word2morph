@@ -64,7 +64,7 @@ class Word2Morph(object):
         correct = [(pred, correct) for correct, pred in zip(inputs, predicted_samples) if pred == correct]
         wrong = [(pred,   correct) for correct, pred in zip(inputs, predicted_samples) if pred != correct]
 
-        print('Word accuracy after filtering only valid combinations:', len(correct) / len(inputs), flush=True)
+        print('Word accuracy after filtering only valid combinations:', len(correct) / len(predicted_samples))
         return correct, wrong, predicted_samples
 
     @overload

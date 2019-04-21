@@ -40,7 +40,7 @@ class Evaluate(Callback):
         correct = 0
         nb_words = 0
         for batch_prediction, batch_label in zip(predictions, labels):
-            correct += sum([np.array_equal(np.argmax(word_prediction, axis=1), np.argmax(word_label, axis=1))
+            correct += sum([np.array_equal(np.argmax(word_prediction, axis=-1), np.argmax(word_label, axis=-1))
                             for word_prediction, word_label in zip(batch_prediction, batch_label)])
             nb_words += len(batch_label)
 
@@ -55,7 +55,7 @@ class Evaluate(Callback):
         char_predictions = np.array(char_predictions)
         char_labels = np.array(char_labels)
 
-        t, p = np.argmax(char_labels, axis=1), np.argmax(char_predictions, axis=1)
+        t, p = np.argmax(char_labels, axis=-1), np.argmax(char_predictions, axis=-1)
         return tuple([('confusion_matrix', confusion_matrix(t, p)),
                       ('word_acc', correct / nb_words),
                       ('acc', accuracy_score(t, p)),
