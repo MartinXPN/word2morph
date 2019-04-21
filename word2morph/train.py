@@ -61,12 +61,11 @@ class Gym(object):
                                        bmes_mapping=self.bmes_mapping)
 
         print('Removing wrong labels (current labels are: the cross product [BMES x SegmentTypes])...')
-        labels = list(chain.from_iterable([self.processor.parse_one(sample)[1] for sample in self.train_dataset]))
-        labels = np.array(labels, dtype=np.int8)
-        unique_labels = np.unique(labels)
+        labels = list(chain.from_iterable([self.processor.segments_to_label(sample.segments) for sample in self.train_dataset]))
+        self.label_mapping = LabelToIdMapping(labels=labels)
+        label_ids = [self.label_mapping[l] for l in labels]
 
-        self.label_mapping = LabelToIdMapping(labels=list(unique_labels))
-        self.class_weights = class_weight.compute_class_weight('balanced', unique_labels, labels)
+        self.class_weights = class_weight.compute_class_weight('balanced', np.unique(label_ids), label_ids)
         self.processor.label_mapping = self.label_mapping
         print('Calculated class weights:', self.class_weights)
         print('Number of classes per char:', self.processor.nb_classes())
@@ -131,7 +130,7 @@ class Gym(object):
             steps_per_epoch=len(train_generator),
             epochs=epochs,
             callbacks=[Evaluate(data_generator=itertools.cycle(valid_generator), nb_steps=len(valid_generator)),
-                       ClassifierTensorBoard(labels=[f'{k}: {i}' for k, i in self.label_mapping.key_to_id.items()], log_dir=log_dir),
+                       ClassifierTensorBoard(labels=[f'{bmes}: {seg_type}' for bmes, seg_type in self.label_mapping.keys], log_dir=log_dir),
                        Checkpoint(on_save_callback=(lambda: Word2Morph(model=self.model, processor=self.processor).save(model_path)) if save_best else lambda: None, monitor=monitor_metric, save_best_only=True, verbose=1),
                        ComparableEarlyStopping(to_compare_values=best_training_curve, monitor=monitor_metric, patience=patience),
                        EarlyStopping(monitor=monitor_metric, patience=patience)],

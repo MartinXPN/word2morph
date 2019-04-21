@@ -1,28 +1,30 @@
-from typing import Any, List, Set, Union, Optional
+from typing import List, Set, Union, Optional, Iterable, Tuple, TypeVar, Generic
+
+T = TypeVar('T')
 
 
-class Mapping(object):
+class Mapping(Generic[T]):
     def __init__(self):
         self.UNK = '<<UNK>>'
 
-    def __getitem__(self, item: Any):
+    def __getitem__(self, item: T):
         raise NotImplementedError('You need to implement the mapping operator...')
 
 
 class KeyToIdMapping(Mapping):
     def __init__(self,
-                 keys: Union[List[Union[str, int]], Set[Union[str, int]]],
+                 keys: Iterable[T],
                  include_unknown: bool = True):
 
-        super(KeyToIdMapping, self).__init__()
+        super().__init__()
         self.keys = [self.UNK] if include_unknown else []
         self.keys += list(keys)
         self.key_to_id = {key: i for i, key in enumerate(self.keys)}
 
-    def get(self, key_id):
+    def get(self, key_id: int):
         return self.keys[key_id]
 
-    def __getitem__(self, item: Union[str, int]) -> int:
+    def __getitem__(self, item: T) -> int:
         if item in self.key_to_id:      return self.key_to_id[item]
         if self.UNK in self.key_to_id:  return self.key_to_id[self.UNK]
         raise KeyError('`{}` is not present in the mapping'.format(item))
@@ -37,7 +39,7 @@ class KeyToIdMapping(Mapping):
 class CharToIdMapping(KeyToIdMapping):
     def __init__(self,
                  text: Optional[str] = None,
-                 words: Optional[Union[List[str], Set[str]]] = None,
+                 words: Optional[Iterable[str]] = None,
                  chars: Optional[List[str]] = None,
                  include_unknown: bool = True):
 
@@ -51,24 +53,32 @@ class CharToIdMapping(KeyToIdMapping):
         if words is not None:
             for word in dict.fromkeys(words).keys():
                 chars.update(dict.fromkeys(word))
-        super(CharToIdMapping, self).__init__(list(chars), include_unknown)
+        super().__init__(list(chars), include_unknown)
 
 
 class WordSegmentTypeToIdMapping(KeyToIdMapping):
     def __init__(self,
                  segments: Union[List[str], Set[str]],
                  include_unknown: bool = True):
-        super(WordSegmentTypeToIdMapping, self).__init__(list(dict.fromkeys(segments)), include_unknown)
+        super().__init__(list(dict.fromkeys(segments)), include_unknown)
 
 
 class BMESToIdMapping(KeyToIdMapping):
-    def __init__(self, begin='B', mid='M', end='E', single='S'):
-        self.BEGIN, self.MID, self.END, self.SINGLE = begin, mid, end, single
+    BEGIN = 'B'
+    MID = 'M'
+    END = 'E'
+    SINGLE = 'S'
+
+    def __init__(self):
         super(BMESToIdMapping, self).__init__([self.BEGIN, self.MID, self.END, self.SINGLE], False)
 
 
 class LabelToIdMapping(KeyToIdMapping):
     def __init__(self,
-                 labels: Union[List[int], Set[int]],
+                 labels: Union[Iterable[Tuple[BMESToIdMapping, str]],
+                               Iterable[Tuple[str]]],
                  include_unknown: bool = False):
-        super(LabelToIdMapping, self).__init__(list(dict.fromkeys(labels)), include_unknown)
+        """
+        :param labels: [BMES, segment.type]
+        """
+        super().__init__(list(dict.fromkeys(labels)), include_unknown)
