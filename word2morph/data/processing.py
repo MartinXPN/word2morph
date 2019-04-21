@@ -23,7 +23,7 @@ class DataProcessor(object):
         self.bmes_mapping = bmes_mapping
         self.label_mapping = label_mapping
 
-    def segment_to_label(self, seg: BMESToIdMapping, seg_type: str) -> int:
+    def label_to_id(self, seg: BMESToIdMapping, seg_type: str) -> int:
         if self.label_mapping:
             return self.label_mapping[(seg, seg_type)]
 
@@ -54,7 +54,7 @@ class DataProcessor(object):
         y = self.segments_to_label(segments=sample.segments)
         assert len(x) == len(y) or len(y) == 0
 
-        y = [self.segment_to_label(seg, seg_type) for seg, seg_type in y]
+        y = [self.label_to_id(seg, seg_type) for seg, seg_type in y]
         y = np.array(y, dtype=np.int32)
         return x, y
 
@@ -86,7 +86,7 @@ class DataProcessor(object):
         """
         def is_valid(seg: BMESToIdMapping, seg_type: str):
             try:
-                self.segment_to_label(seg=seg, seg_type=seg_type)
+                self.label_to_id(seg=seg, seg_type=seg_type)
                 return True
             except KeyError:
                 return False
@@ -102,10 +102,10 @@ class DataProcessor(object):
             ''' Check for Single or Begin for all segment types '''
             if current_seg is None or current_seg in {self.bmes_mapping.END, self.bmes_mapping.SINGLE}:
                 single = [-1 if not is_valid(self.bmes_mapping.SINGLE, seg_type) else
-                          prediction[i][self.segment_to_label(seg=self.bmes_mapping.SINGLE, seg_type=seg_type)]
+                          prediction[i][self.label_to_id(seg=self.bmes_mapping.SINGLE, seg_type=seg_type)]
                           for seg_type in self.word_segment_mapping.keys]
                 begin = [-1 if not is_valid(self.bmes_mapping.BEGIN, seg_type) else
-                         prediction[i][self.segment_to_label(seg=self.bmes_mapping.BEGIN, seg_type=seg_type)]
+                         prediction[i][self.label_to_id(seg=self.bmes_mapping.BEGIN, seg_type=seg_type)]
                          for seg_type in self.word_segment_mapping.keys]
 
                 single_best = np.argmax(single)
@@ -122,8 +122,8 @@ class DataProcessor(object):
                 ''' Check for Mid or End for the current segment type '''
             elif current_seg in {self.bmes_mapping.BEGIN, self.bmes_mapping.MID}:
                 if is_valid(self.bmes_mapping.END, current_seg_type) and \
-                        prediction[i][self.segment_to_label(seg=self.bmes_mapping.END, seg_type=current_seg_type)] > \
-                        prediction[i][self.segment_to_label(seg=self.bmes_mapping.MID, seg_type=current_seg_type)]:
+                        prediction[i][self.label_to_id(seg=self.bmes_mapping.END, seg_type=current_seg_type)] > \
+                        prediction[i][self.label_to_id(seg=self.bmes_mapping.MID, seg_type=current_seg_type)]:
                     segments.append(Segment(word[current_seg_start: i+1], segment_type=current_seg_type))
                     current_seg_start = i + 1
                     current_seg = self.bmes_mapping.END
