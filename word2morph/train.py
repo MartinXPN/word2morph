@@ -61,12 +61,11 @@ class Gym(object):
                                        bmes_mapping=self.bmes_mapping)
 
         print('Removing wrong labels (current labels are: the cross product [BMES x SegmentTypes])...')
-        labels = list(chain.from_iterable([self.processor.parse_one(sample)[1] for sample in self.train_dataset]))
-        labels = np.array(labels, dtype=np.int8)
-        unique_labels = np.unique(labels)
+        labels = list(chain.from_iterable([self.processor.segments_to_label(sample.segments) for sample in self.train_dataset]))
+        self.label_mapping = LabelToIdMapping(labels=labels)
+        label_ids = [self.label_mapping[l] for l in labels]
 
-        self.label_mapping = LabelToIdMapping(labels=list(unique_labels))
-        self.class_weights = class_weight.compute_class_weight('balanced', unique_labels, labels)
+        self.class_weights = class_weight.compute_class_weight('balanced', np.unique(label_ids), label_ids)
         self.processor.label_mapping = self.label_mapping
         print('Calculated class weights:', self.class_weights)
         print('Number of classes per char:', self.processor.nb_classes())
