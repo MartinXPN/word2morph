@@ -4,7 +4,7 @@ import numpy as np
 from keras_preprocessing.sequence import pad_sequences
 
 from word2morph.entities.sample import Sample, Segment
-from .mappings import CharToIdMapping, WordSegmentTypeToIdMapping, BMESToIdMapping, LabelToIdMapping
+from word2morph.data.mappings import CharToIdMapping, WordSegmentTypeToIdMapping, BMESToIdMapping, LabelToIdMapping
 
 
 class DataProcessor(object):
@@ -17,16 +17,31 @@ class DataProcessor(object):
                  char_mapping: CharToIdMapping,
                  word_segment_mapping: WordSegmentTypeToIdMapping,
                  bmes_mapping: BMESToIdMapping,
-                 label_mapping: LabelToIdMapping = None):
+                 label_mapping: Optional[LabelToIdMapping] = None):
         self.char_mapping = char_mapping
         self.word_segment_mapping = word_segment_mapping
         self.bmes_mapping = bmes_mapping
         self.label_mapping = label_mapping
 
-    def segment_to_label(self, seg: str, seg_type: str) -> int:
-        res = len(self.word_segment_mapping) * self.bmes_mapping[seg] + self.word_segment_mapping[seg_type]
+    def segment_to_label(self, seg: BMESToIdMapping, seg_type: str) -> int:
         if self.label_mapping:
-            res = self.label_mapping[res]
+            return self.label_mapping[(seg, seg_type)]
+
+        return len(self.word_segment_mapping) * self.bmes_mapping[seg] + self.word_segment_mapping[seg_type]
+
+    def segments_to_label(self, segments: Tuple[Segment, ...]) -> List[Tuple[BMESToIdMapping, str]]:
+        res = []
+        for word_segment in segments:
+            word_segment, segment_type = word_segment.segment, word_segment.type
+            segment_type = segment_type or self.word_segment_mapping.UNK
+
+            '''Map the word segment to BMES (Begin, Mid, End, Single) encoding '''
+            if len(word_segment) == 1:  # Single
+                res.append((self.bmes_mapping.SINGLE, segment_type))
+            else:  # Begin Mid Mid Mid Mid End
+                res.append((self.bmes_mapping.BEGIN, segment_type))
+                res += [(self.bmes_mapping.MID, segment_type) for _ in word_segment[1: -1]]
+                res.append((self.bmes_mapping.END, segment_type))
         return res
 
     def parse_one(self, sample: Sample) -> Tuple[np.ndarray, np.ndarray]:
@@ -35,22 +50,13 @@ class DataProcessor(object):
         :return: valid tuple X, Y that can be passed to the network input
         """
         x = [self.char_mapping[c] for c in sample.word]
-        y = []
-
-        for word_segment in sample.segments:
-            word_segment, segment_type = word_segment.segment, word_segment.type
-            segment_type = segment_type or self.word_segment_mapping.UNK
-
-            '''Map the word segment to BMES (Begin, Mid, End, Single) encoding '''
-            if len(word_segment) == 1:  # Single
-                y.append(self.segment_to_label(self.bmes_mapping.SINGLE, segment_type))
-            else:  # Begin Mid Mid Mid Mid End
-                y.append(self.segment_to_label(self.bmes_mapping.BEGIN, segment_type))
-                y += [self.segment_to_label(self.bmes_mapping.MID, segment_type) for _ in word_segment[1: -1]]
-                y.append(self.segment_to_label(self.bmes_mapping.END, segment_type))
-
+        x = np.array(x, dtype=np.int32)
+        y = self.segments_to_label(segments=sample.segments)
         assert len(x) == len(y) or len(y) == 0
-        return np.array(x, dtype=np.int32), np.array(y, dtype=np.int32)
+
+        y = [self.segment_to_label(seg, seg_type) for seg, seg_type in y]
+        y = np.array(y, dtype=np.int32)
+        return x, y
 
     def parse(self, data: List[Sample], convert_one_hot: bool = True) -> Tuple[np.ndarray, np.ndarray]:
         inputs, labels = [], []
@@ -78,7 +84,7 @@ class DataProcessor(object):
         :param prediction: np.array with shape (nb_chars, nb_classes_per_char) -> (9, 25): the output of softmax
         :return: corresponding valid Sample from the prediction
         """
-        def is_valid(seg: str, seg_type: str):
+        def is_valid(seg: BMESToIdMapping, seg_type: str):
             try:
                 self.segment_to_label(seg=seg, seg_type=seg_type)
                 return True
@@ -87,7 +93,7 @@ class DataProcessor(object):
 
         assert len(prediction.shape) == 2
         assert prediction.shape[0] >= len(word) and prediction.shape[1] == self.nb_classes()
-        current_seg: Optional[str] = None
+        current_seg: Optional[BMESToIdMapping] = None
         current_seg_type: Optional[str] = None
         current_seg_start: int = 0
         segments: List[Segment] = []
