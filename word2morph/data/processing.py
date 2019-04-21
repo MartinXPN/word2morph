@@ -130,6 +130,12 @@ class DataProcessor(object):
                 else:
                     current_seg = self.bmes_mapping.MID
 
+            prediction[i] = 0
+            prediction[i][self.label_to_id(current_seg, current_seg_type)] = 1
+
+        for i in range(len(word), prediction.shape[0]):
+            prediction[i] = 0
+
         if current_seg_start < len(word):
             segments.append(Segment(word[current_seg_start:], segment_type=current_seg_type))
         return Sample(word=word, segments=tuple(segments))

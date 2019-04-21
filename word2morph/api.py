@@ -54,18 +54,11 @@ class Word2Morph(object):
         """
         ''' Show Evaluation metrics '''
         data_generator: DataGenerator = DataGenerator(dataset=Dataset(samples=inputs), processor=self.processor,
-                                                      batch_size=batch_size, with_samples=False, shuffle=False)
-        evaluate = Evaluate(data_generator=iter(data_generator), nb_steps=len(data_generator), prepend_str='test_')
+                                                      batch_size=batch_size, with_samples=True, shuffle=False)
+        evaluate = Evaluate(data_generator=iter(data_generator), to_sample=self.processor.to_sample,
+                            nb_steps=len(data_generator), prepend_str='test_')
         evaluate.model = self.model
-        evaluate.on_epoch_end(epoch=0)
-
-        ''' Predict the result and print '''
-        predicted_samples = self.predict(inputs=inputs, batch_size=batch_size, verbose=True)
-        correct = [(pred, correct) for correct, pred in zip(inputs, predicted_samples) if pred == correct]
-        wrong = [(pred,   correct) for correct, pred in zip(inputs, predicted_samples) if pred != correct]
-
-        print('Word accuracy after filtering only valid combinations:', len(correct) / len(predicted_samples))
-        return correct, wrong, predicted_samples
+        return evaluate.on_epoch_end(epoch=0)
 
     @overload
     def __getitem__(self, item: str) -> Sample:
