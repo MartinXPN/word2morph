@@ -130,9 +130,11 @@ class DataProcessor(object):
                 else:
                     current_seg = self.bmes_mapping.MID
 
+            # Only the selected option should be 1. Others become 0
             prediction[i] = 0
             prediction[i][self.label_to_id(current_seg, current_seg_type)] = 1
 
+        # make elements of padding equal to 0
         for i in range(len(word), prediction.shape[0]):
             prediction[i] = 0
 

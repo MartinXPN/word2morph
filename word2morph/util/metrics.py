@@ -89,6 +89,7 @@ class Evaluate(Callback):
             for word_prediction, word_label, word_sample in zip(batch_prediction, batch_label, batch_samples):
                 valid_sample = self.to_sample(word=word_sample.word, prediction=word_prediction)
                 predicted_samples.append(valid_sample)
+        assert len(all_samples) == len(predicted_samples)
 
         metrics = self.evaluate(predictions=epoch_predictions, labels=epoch_labels)
         for metric_name, metric_value in metrics:
@@ -99,6 +100,6 @@ class Evaluate(Callback):
 
         correct = [(pred, correct) for correct, pred in zip(all_samples, predicted_samples) if pred == correct]
         wrong = [(pred,   correct) for correct, pred in zip(all_samples, predicted_samples) if pred != correct]
-        print('Word acc:', len(correct) / len(all_samples))
+        print('Sample accuracy:', len(correct) / len(all_samples))
 
         return correct, wrong, predicted_samples

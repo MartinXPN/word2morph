@@ -18,6 +18,7 @@ VERSION = __version__
 
 # What packages are required for this module to be executed?
 REQUIRED = [
+    'matplotlib>=3.0.3',
     'baytune>=0.2.4',
     'fire>=0.1.3',
     'joblib>=0.13.2',
