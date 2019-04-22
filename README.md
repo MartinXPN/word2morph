@@ -32,5 +32,4 @@ python setup.py upload
 
 
 #### TODO
-* Evaluate results after post-processing
 * Improve post-processing step

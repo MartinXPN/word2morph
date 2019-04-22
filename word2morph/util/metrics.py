@@ -19,10 +19,11 @@ def multi_class_roc_auc_score(y_test, y_pred, average="macro"):
 
 
 class Evaluate(Callback):
-    # TODO -> evaluate before correcting the predictions and evaluate after to see the difference
-    def __init__(self, data_generator: Iterator[DataGenerator], nb_steps: int, prepend_str: str = 'val_'):
+    def __init__(self, data_generator: Iterator[DataGenerator], to_sample,
+                 nb_steps: int, prepend_str: str = 'val_'):
         super(Evaluate, self).__init__()
         self.data_generator = data_generator
+        self.to_sample = to_sample
         self.nb_steps = nb_steps
         self.prepend_str = prepend_str
 
@@ -70,14 +71,35 @@ class Evaluate(Callback):
 
         epoch_labels = []
         epoch_predictions = []
-        for i, (inputs, labels) in zip(range(self.nb_steps), self.data_generator):
+        epoch_samples = []
+        all_samples = []
+        for i, (inputs, labels, samples) in zip(range(self.nb_steps), self.data_generator):
             predictions = self.model.predict(inputs)
             epoch_labels.append(labels)
             epoch_predictions.append(predictions)
+            epoch_samples.append(samples)
+            all_samples += samples
 
         metrics = self.evaluate(predictions=epoch_predictions, labels=epoch_labels)
         for metric_name, metric_value in metrics:
             logs[self.prepend_str + metric_name] = metric_value
 
+        predicted_samples = []
+        for batch_prediction, batch_label, batch_samples in zip(epoch_predictions, epoch_labels, epoch_samples):
+            for word_prediction, word_label, word_sample in zip(batch_prediction, batch_label, batch_samples):
+                valid_sample = self.to_sample(word=word_sample.word, prediction=word_prediction)
+                predicted_samples.append(valid_sample)
+        assert len(all_samples) == len(predicted_samples)
+
+        metrics = self.evaluate(predictions=epoch_predictions, labels=epoch_labels)
+        for metric_name, metric_value in metrics:
+            logs[self.prepend_str + metric_name + '_processed'] = metric_value
+
         print(f'\nEvaluating for epoch {epoch + 1}...')
         pprint({k: v for k, v in logs.items() if isinstance(v, (int, float, str))})
+
+        correct = [(pred, correct) for correct, pred in zip(all_samples, predicted_samples) if pred == correct]
+        wrong = [(pred,   correct) for correct, pred in zip(all_samples, predicted_samples) if pred != correct]
+        print('Sample accuracy:', len(correct) / len(all_samples))
+
+        return correct, wrong, predicted_samples

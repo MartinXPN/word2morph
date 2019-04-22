@@ -123,13 +123,14 @@ class Gym(object):
         np.savetxt(fname=Path(log_dir).joinpath('params.txt'), X=[json.dumps(self.params, indent=4, sort_keys=True)], fmt='%s')
 
         train_generator = DataGenerator(dataset=self.train_dataset, processor=self.processor, batch_size=batch_size)
-        valid_generator = DataGenerator(dataset=self.valid_dataset, processor=self.processor, batch_size=batch_size)
+        valid_generator = DataGenerator(dataset=self.valid_dataset, processor=self.processor, batch_size=batch_size,
+                                        with_samples=True)
 
         history = self.model.fit_generator(
             generator=itertools.cycle(train_generator),
             steps_per_epoch=len(train_generator),
             epochs=epochs,
-            callbacks=[Evaluate(data_generator=itertools.cycle(valid_generator), nb_steps=len(valid_generator)),
+            callbacks=[Evaluate(data_generator=itertools.cycle(valid_generator), to_sample=self.processor.to_sample, nb_steps=len(valid_generator)),
                        ClassifierTensorBoard(labels=[f'{bmes}: {seg_type}' for bmes, seg_type in self.label_mapping.keys], log_dir=log_dir),
                        Checkpoint(on_save_callback=(lambda: Word2Morph(model=self.model, processor=self.processor).save(model_path)) if save_best else lambda: None, monitor=monitor_metric, save_best_only=True, verbose=1),
                        ComparableEarlyStopping(to_compare_values=best_training_curve, monitor=monitor_metric, patience=patience),
