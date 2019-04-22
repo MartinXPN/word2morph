@@ -88,28 +88,24 @@ class ClassifierTensorBoard(TensorBoard):
     def on_epoch_end(self, epoch, logs=None):
         logs = logs or {}
 
-        confusion_matrix = None
-        confusion_matrix_key = None
-        for key, value in logs.items():
-            if isinstance(value, np.ndarray):
-                confusion_matrix_key = key
-                confusion_matrix = value
-                break
+        confusion_matrix_logs = {}
+        for tag, matrix in logs.items():
+            if isinstance(matrix, np.ndarray):
+                confusion_matrix_logs[tag] = matrix
 
-        if confusion_matrix_key is not None:
-            del logs[confusion_matrix_key]
+        for tag in confusion_matrix_logs.keys():
+            del logs[tag]
 
         # Log confusion matrix
         index = epoch if self.update_freq == 'epoch' else self.samples_seen
-        figure = self._plot_confusion_matrix(confusion_matrix)
-        summary = self._figure_to_summary(figure)
-        self.writer.add_summary(summary, index)
+        for tag, confusion_matrix in confusion_matrix_logs.items():
+            figure = self._plot_confusion_matrix(confusion_matrix)
+            summary = self._figure_to_summary(figure, tag=tag)
+            self.writer.add_summary(summary, index)
 
         # Log primitive data
         super().on_epoch_end(epoch, logs)
-
-        if confusion_matrix_key is not None and confusion_matrix is not None:
-            logs[confusion_matrix_key] = confusion_matrix
+        logs.update(confusion_matrix_logs)
 
     def _plot_confusion_matrix(self, cm: np.ndarray):
         """
@@ -149,7 +145,7 @@ class ClassifierTensorBoard(TensorBoard):
         return fig
 
     @staticmethod
-    def _figure_to_summary(fig: Figure):
+    def _figure_to_summary(fig: Figure, tag: str):
         """
         Converts a matplotlib figure ``fig`` into a TensorFlow Summary object
         that can be directly fed into ``Summary.FileWriter``.
@@ -172,5 +168,5 @@ class ClassifierTensorBoard(TensorBoard):
         png_buffer.close()
 
         summary_image = tf.Summary.Image(height=h, width=w, colorspace=4, encoded_image_string=png_encoded)
-        summary = tf.Summary(value=[tf.Summary.Value(tag='ConfusionMatrix', image=summary_image)])
+        summary = tf.Summary(value=[tf.Summary.Value(tag=tag, image=summary_image)])
         return summary
