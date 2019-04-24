@@ -58,7 +58,7 @@ class HyperparameterSearchGym(Gym):
         self.selector = UCB1(list(self.tuners.keys()))
 
     def search_hyperparameters(self, nb_trials: int, epochs: int = 100, patience: int = 10,
-                               monitor_metric: str = 'val_acc', log_dir: str = 'logs'):
+                               monitor_metric: str = 'val_word_acc_processed', log_dir: str = 'logs'):
         best_training_curve = {key: [0] * epochs for key in self.tuners.keys()}
         for trial in range(nb_trials):
             model_choice = self.selector.select({name: self.tuners[name].y for name in self.tuners.keys()})

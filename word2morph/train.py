@@ -112,7 +112,7 @@ class Gym(object):
 
     def train(self, batch_size: int = 32, epochs: int = 100, patience: int = 10,
               best_training_curve: Optional[List[float]] = None, save_best: bool = True,
-              monitor_metric: str = 'val_acc', log_dir: str = 'logs'):
+              monitor_metric: str = 'val_word_acc_processed', log_dir: str = 'logs'):
         self.params.update(locals()), self.params.pop('self'), self.params.pop('best_training_curve')
 
         ''' Save all the objects/parameters for reproducibility '''
