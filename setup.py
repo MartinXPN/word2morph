@@ -17,7 +17,6 @@ setup(
         'joblib>=0.13.2',
         'jupyter-core>=4.4.0',
         'Keras>=2.2.4',
-        'keras-contrib>=2.0.8',
         'numpy>=1.16.1',
         'scikit-learn>=0.20.2',
         'tensorflow>=1.12.0',
