@@ -9,7 +9,7 @@
 ```bash
 git clone https://github.com/MartinXPN/word2morph.git
 cd word2morph
-pip install . --process-dependency-links
+pip install .
 ```
 
 ### Train a model
