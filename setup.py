@@ -18,6 +18,7 @@ VERSION = __version__
 
 # What packages are required for this module to be executed?
 REQUIRED = [
+    'GitPython>=2.1.11',
     'matplotlib>=3.0.3',
     'baytune>=0.2.4',
     'fire>=0.1.3',
