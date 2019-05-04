@@ -1,4 +1,3 @@
-import itertools
 import json
 import sys
 from datetime import datetime
@@ -112,7 +111,7 @@ class Gym(object):
 
     def train(self, batch_size: int = 32, epochs: int = 100, patience: int = 10,
               best_training_curve: Optional[List[float]] = None, save_best: bool = True,
-              monitor_metric: str = 'val_word_acc_processed', log_dir: str = 'logs'):
+              threads: int = 4, monitor_metric: str = 'val_word_acc_processed', log_dir: str = 'logs'):
         self.params.update(locals()), self.params.pop('self'), self.params.pop('best_training_curve')
 
         ''' Save all the objects/parameters for reproducibility '''
@@ -127,15 +126,15 @@ class Gym(object):
                                         with_samples=True)
 
         history = self.model.fit_generator(
-            generator=itertools.cycle(train_generator),
-            steps_per_epoch=len(train_generator),
+            generator=train_generator,
             epochs=epochs,
-            callbacks=[Evaluate(data_generator=itertools.cycle(valid_generator), to_sample=self.processor.to_sample, nb_steps=len(valid_generator)),
+            callbacks=[Evaluate(data_generator=valid_generator, to_sample=self.processor.to_sample),
                        ClassifierTensorBoard(labels=[f'{bmes}: {seg_type}' for bmes, seg_type in self.label_mapping.keys], log_dir=log_dir),
                        Checkpoint(on_save_callback=(lambda: Word2Morph(model=self.model, processor=self.processor).save(model_path)) if save_best else lambda: None, monitor=monitor_metric, save_best_only=True, verbose=1),
                        ComparableEarlyStopping(to_compare_values=best_training_curve, monitor=monitor_metric, patience=patience),
                        EarlyStopping(monitor=monitor_metric, patience=patience)],
             class_weight=self.class_weights,
+            use_multiprocessing=True, workers=threads,
         )
 
         return history.history

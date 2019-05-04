@@ -37,7 +37,7 @@ class Word2Morph(object):
                                        with_samples=True, shuffle=False)
 
         predicted_samples: List[Sample] = []
-        for inputs, _, samples in tqdm(iter(data_generator), disable=not verbose):
+        for inputs, _, samples in tqdm(data_generator, disable=not verbose):
             predictions = self.model.predict(inputs)
             predicted_samples += [self.processor.to_sample(word=sample.word, prediction=prediction)
                                   for sample, prediction in zip(samples, predictions)]
@@ -55,7 +55,7 @@ class Word2Morph(object):
         ''' Show Evaluation metrics '''
         data_generator: DataGenerator = DataGenerator(dataset=Dataset(samples=inputs), processor=self.processor,
                                                       batch_size=batch_size, with_samples=True, shuffle=False)
-        evaluate = Evaluate(data_generator=iter(data_generator), to_sample=self.processor.to_sample,
+        evaluate = Evaluate(data_generator=data_generator, to_sample=self.processor.to_sample,
                             nb_steps=len(data_generator), prepend_str='test_')
         evaluate.model = self.model
         return evaluate.on_epoch_end(epoch=0)
