@@ -1,11 +1,8 @@
 from setuptools import find_packages, setup
 
-from word2morph import __version__
-
-
 setup(
     name='word2morph',
-    version=__version__,
+    version='0.2.0',
     description='Python package for neural morpheme extraction from words',
     author='Martin Mirakyan',
     author_email='mirakyanmartin@gmail.com',
