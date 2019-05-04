@@ -1,6 +1,7 @@
 import urllib.request
 from pathlib import Path
 
+import git
 from tqdm import tqdm
 
 
@@ -25,3 +26,8 @@ def download(url: str, save_path: str, exists_ok: bool = True, verbose: int = 2)
     description = url.split('/')[-1]
     with DownloadProgressBar(unit='B', unit_scale=True, miniters=1, desc=description, disable=verbose < 2) as t:
         urllib.request.urlretrieve(url=url, filename=save_path, reporthook=t.update_to)
+
+
+def get_current_commit() -> str:
+    repo = git.Repo(search_parent_directories=True)
+    return repo.head.object.hexsha

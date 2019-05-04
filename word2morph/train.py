@@ -27,6 +27,7 @@ from word2morph.models.rnn import RNNModel
 from word2morph.util.args import map_arguments
 from word2morph.util.callbacks import ComparableEarlyStopping, Checkpoint, ClassifierTensorBoard
 from word2morph.util.metrics import Evaluate
+from word2morph.util.utils import get_current_commit
 
 
 class Gym(object):
@@ -119,7 +120,7 @@ class Gym(object):
         model_path = Path(log_dir).joinpath('checkpoints').joinpath("best-model.joblib")
         model_path.parent.mkdir(parents=True, exist_ok=True)
         np.savetxt(fname=Path(log_dir).joinpath('commandline.txt'), X=sys.argv, fmt='%s')
-        np.savetxt(fname=Path(log_dir).joinpath('params.txt'), X=[json.dumps(self.params, indent=4, sort_keys=True)], fmt='%s')
+        np.savetxt(fname=Path(log_dir).joinpath('params.txt'), X=[json.dumps({'params': self.params, 'commit': get_current_commit()}, indent=4, sort_keys=True)], fmt='%s')
 
         train_generator = DataGenerator(dataset=self.train_dataset, processor=self.processor, batch_size=batch_size)
         valid_generator = DataGenerator(dataset=self.valid_dataset, processor=self.processor, batch_size=batch_size,
