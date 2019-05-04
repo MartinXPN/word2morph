@@ -1,5 +1,5 @@
 from pprint import pprint
-from typing import Tuple, List, Iterator, Union
+from typing import Tuple, List, Union
 
 import numpy as np
 from keras.callbacks import Callback
@@ -19,12 +19,12 @@ def multi_class_roc_auc_score(y_test, y_pred, average="macro"):
 
 
 class Evaluate(Callback):
-    def __init__(self, data_generator: Iterator[DataGenerator], to_sample,
-                 nb_steps: int, prepend_str: str = 'val_'):
+    def __init__(self, data_generator: DataGenerator, to_sample,
+                 nb_steps: int = None, prepend_str: str = 'val_'):
         super(Evaluate, self).__init__()
         self.data_generator = data_generator
         self.to_sample = to_sample
-        self.nb_steps = nb_steps
+        self.nb_steps = nb_steps if nb_steps else len(data_generator)
         self.prepend_str = prepend_str
 
     def evaluate(self,
