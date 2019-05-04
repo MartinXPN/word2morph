@@ -1,30 +1,17 @@
-from pathlib import Path
-
 from setuptools import find_packages, setup
 
 from word2morph import __version__
 
 
-with open(Path().absolute().parent.joinpath('README.md'), encoding='utf-8') as f:
-    long_description = '\n' + f.read()
-
 setup(
     name='word2morph',
     version=__version__,
     description='Python package for neural morpheme extraction from words',
-    long_description=long_description,
-    long_description_content_type='text/markdown',
     author='Martin Mirakyan',
     author_email='mirakyanmartin@gmail.com',
     python_requires='>=3.6.0',
     url='https://github.com/MartinXPN/word2morph',
     packages=find_packages(exclude=('tests',)),
-    # If your package is a single module, use this instead of 'packages':
-    # py_modules=['mypackage'],
-
-    # entry_points={
-    #     'console_scripts': ['mycli=mymodule:cli'],
-    # },
     install_requires=[
         'GitPython>=2.1.11',
         'matplotlib>=3.0.3',
@@ -33,6 +20,7 @@ setup(
         'joblib>=0.13.2',
         'jupyter-core>=4.4.0',
         'Keras>=2.2.4',
+        'keras-contrib>=2.0.8',
         'numpy>=1.16.1',
         'scikit-learn>=0.20.2',
         'tensorflow>=1.12.0',
