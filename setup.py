@@ -21,7 +21,10 @@ setup(
         'scikit-learn>=0.20.2',
         'tensorflow>=1.12.0',
         'tqdm>=4.31.1',
-        'keras-contrib @ git+https://www.github.com/keras-team/keras-contrib.git',
+        'keras_contrib',
+    ],
+    dependency_links=[
+        'git+https://github.com/keras-team/keras-contrib.git/master#egg=keras-contrib',
     ],
     extras_require={},
     include_package_data=True,

@@ -9,7 +9,7 @@
 ```bash
 git clone https://github.com/MartinXPN/word2morph.git
 cd word2morph
-pip install .
+pip install -e .
 ```
 
 ### Train a model
