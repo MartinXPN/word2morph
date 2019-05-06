@@ -11,7 +11,7 @@ import numpy as np
 from keras import Model
 from keras import backend as K
 from keras.callbacks import EarlyStopping
-from keras.optimizers import Adam
+from keras.optimizers import Adam, Nadam
 from keras_contrib.losses import crf_loss
 from keras_contrib.metrics import crf_viterbi_accuracy
 from sklearn.utils import class_weight
@@ -106,7 +106,7 @@ class Gym(object):
 
         loss = crf_loss if use_crf else 'categorical_crossentropy'
         metrics = [crf_viterbi_accuracy] if use_crf else ['acc']
-        self.model.compile(optimizer=Adam(clipnorm=5.0), loss=loss, metrics=metrics)
+        self.model.compile(optimizer=Nadam(clipnorm=5.0), loss=loss, metrics=metrics)
         self.model.summary()
         return self
 
