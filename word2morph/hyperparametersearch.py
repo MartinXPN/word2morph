@@ -58,7 +58,7 @@ class HyperparameterSearchGym(Gym):
         self.selector = UCB1(list(self.tuners.keys()))
 
     def search_hyperparameters(self, nb_trials: int, epochs: int = 100, patience: int = 10,
-                               early_stop_if_lower_than_best: bool = False,
+                               compare_to_best: bool = False,
                                monitor_metric: str = 'val_word_acc_processed', log_dir: str = 'logs'):
         best_training_curve = {key: [0] * epochs for key in self.tuners.keys()}
         for trial in range(nb_trials):
@@ -88,8 +88,7 @@ class HyperparameterSearchGym(Gym):
             transformed_params.update(model_type=model_name,
                                       epochs=epochs, patience=patience, log_dir=log_dir,
                                       monitor_metric=monitor_metric,
-                                      best_training_curve=best_training_curve[model_choice]
-                                      if early_stop_if_lower_than_best else None,
+                                      best_training_curve=best_training_curve[model_choice]if compare_to_best else None,
                                       save_best=False)
 
             ''' Construct and train the model '''
@@ -106,6 +105,9 @@ class HyperparameterSearchGym(Gym):
 
             if best_score_so_far < best_score:
                 best_training_curve[model_choice] = history[monitor_metric]
+
+            if not compare_to_best:
+                potential_improvement = 0
             self.tuners[model_choice].add(parameters, best_score + potential_improvement)
 
         for model_choice in self.tuners.keys():
