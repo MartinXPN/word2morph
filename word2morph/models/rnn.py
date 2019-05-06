@@ -1,7 +1,7 @@
 from typing import Tuple
 
-from keras import Model
-from keras.layers import Embedding, Input, Dropout, TimeDistributed, Dense, GRU, Bidirectional, Masking
+from keras import Model, Sequential
+from keras.layers import Embedding, Input, Dropout, TimeDistributed, Dense, GRU, Bidirectional, Masking, PReLU
 from keras_contrib.layers import CRF
 
 
@@ -30,8 +30,11 @@ class RNNModel(Model):
             x = Bidirectional(GRU(units=units, return_sequences=True))(x)
             x = Dropout(dropout)(x)
 
-        x = TimeDistributed(Dense(dense_output_units, activation='relu'), name='pre_output')(x) \
-            if dense_output_units else x
+        if dense_output_units:
+            x = TimeDistributed(Sequential([
+                Dense(dense_output_units),
+                PReLU(),
+            ]), name='pre_output')(x)
 
         output = CRF(units=nb_classes, learn_mode='join', name='output')(x) \
             if use_crf else TimeDistributed(Dense(nb_classes, activation='softmax', name='output'))(x)
