@@ -36,7 +36,7 @@ class RNNModel(Model):
                 PReLU(),
             ]), name='pre_output')(x)
 
-        output = CRF(units=nb_classes, learn_mode='join', name='output')(x) \
+        output = CRF(units=nb_classes, learn_mode='join', test_mode='marginal', name='output')(x) \
             if use_crf else TimeDistributed(Dense(nb_classes, activation='softmax', name='output'))(x)
 
         super(RNNModel, self).__init__(inputs=[net_input], outputs=[output], name=name)
