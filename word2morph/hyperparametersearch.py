@@ -15,7 +15,9 @@ class HyperparameterSearchGym(Gym):
         super(HyperparameterSearchGym, self).__init__()
 
         generic_params = [
-            ('embeddings_size',         HyperParameter(ParamTypes.INT, [4, 18])),
+            ('lr',                      HyperParameter(ParamTypes.FLOAT, [0.0001, 1.])),
+            ('decay_rate',              HyperParameter(ParamTypes.FLOAT, [0.0001, 0.2])),
+            ('embeddings_size',         HyperParameter(ParamTypes.INT, [4, 24])),
             ('dense_output_units',      HyperParameter(ParamTypes.INT, [16, 256])),
             ('batch_size',              HyperParameter(ParamTypes.INT, [4, 128])),
             ('dropout',                 HyperParameter(ParamTypes.FLOAT, [0., 0.6])),
@@ -58,7 +60,7 @@ class HyperparameterSearchGym(Gym):
         self.selector = UCB1(list(self.tuners.keys()))
 
     def search_hyperparameters(self, nb_trials: int, epochs: int = 100, patience: int = 10,
-                               compare_to_best: bool = False,
+                               compare_to_best: bool = False, threads: int = 4,
                                monitor_metric: str = 'val_word_acc_processed', log_dir: str = 'logs'):
         best_training_curve = {key: [0] * epochs for key in self.tuners.keys()}
         for trial in range(nb_trials):
@@ -89,7 +91,8 @@ class HyperparameterSearchGym(Gym):
                                       epochs=epochs, patience=patience, log_dir=log_dir,
                                       monitor_metric=monitor_metric,
                                       best_training_curve=best_training_curve[model_choice]if compare_to_best else None,
-                                      save_best=False)
+                                      save_best=False,
+                                      threads=threads)
 
             ''' Construct and train the model '''
             print(f'\n\n\nTraining the model: {model_choice} with hyperparameters: {transformed_params}')

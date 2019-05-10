@@ -114,6 +114,7 @@ class Gym(object):
 
     def train(self, batch_size: int = 32, epochs: int = 100, patience: int = 10,
               best_training_curve: Optional[List[float]] = None, save_best: bool = True,
+              decay_rate: float = 0.05,
               threads: int = 4, monitor_metric: str = 'val_word_acc_processed', log_dir: str = 'logs'):
         self.params.update(locals()), self.params.pop('self'), self.params.pop('best_training_curve')
 
@@ -136,7 +137,7 @@ class Gym(object):
                        Checkpoint(on_save_callback=(lambda: Word2Morph(model=self.model, processor=self.processor).save(model_path)) if save_best else lambda: None, monitor=monitor_metric, save_best_only=True, verbose=1),
                        ComparableEarlyStopping(to_compare_values=best_training_curve, monitor=monitor_metric, patience=patience),
                        EarlyStopping(monitor=monitor_metric, patience=patience),
-                       LearningRateScheduler(ExponentialDecay(initial_lr=self.params['lr'], rate=0.05), verbose=1),
+                       LearningRateScheduler(ExponentialDecay(initial_lr=self.params['lr'], rate=decay_rate), verbose=1),
                        ],
             class_weight=self.class_weights,
             use_multiprocessing=True, workers=threads,
