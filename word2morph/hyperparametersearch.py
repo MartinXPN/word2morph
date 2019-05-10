@@ -15,8 +15,8 @@ class HyperparameterSearchGym(Gym):
         super(HyperparameterSearchGym, self).__init__()
 
         generic_params = [
-            ('lr',                      HyperParameter(ParamTypes.FLOAT, [0.0001, 1.])),
-            ('decay_rate',              HyperParameter(ParamTypes.FLOAT, [0.0001, 0.2])),
+            ('lr',                      HyperParameter(ParamTypes.FLOAT, [0.0001, 0.1])),
+            ('decay_rate',              HyperParameter(ParamTypes.FLOAT, [0.0001, 0.3])),
             ('embeddings_size',         HyperParameter(ParamTypes.INT, [4, 24])),
             ('dense_output_units',      HyperParameter(ParamTypes.INT, [16, 256])),
             ('batch_size',              HyperParameter(ParamTypes.INT, [4, 128])),
