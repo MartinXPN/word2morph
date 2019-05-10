@@ -10,8 +10,8 @@ import gc
 import numpy as np
 from keras import Model
 from keras import backend as K
-from keras.callbacks import EarlyStopping
-from keras.optimizers import Adam, Nadam
+from keras.callbacks import EarlyStopping, LearningRateScheduler
+from keras.optimizers import Adam
 from keras_contrib.losses import crf_loss
 from keras_contrib.metrics import crf_viterbi_accuracy
 from sklearn.utils import class_weight
@@ -26,6 +26,7 @@ from word2morph.models.cnn import CNNModel
 from word2morph.models.rnn import RNNModel
 from word2morph.util.args import map_arguments
 from word2morph.util.callbacks import ComparableEarlyStopping, Checkpoint, ClassifierTensorBoard
+from word2morph.util.lrschedulers import ExponentialDecay
 from word2morph.util.metrics import Evaluate
 from word2morph.util.utils import get_current_commit
 
@@ -73,6 +74,7 @@ class Gym(object):
 
     def construct_model(self,
                         model_type: str = 'CNN',
+                        lr: float = 0.001,
                         embeddings_size: int = 8,
                         kernel_sizes: Tuple[int, ...] = (5, 5, 5),
                         nb_filters: Tuple[int, ...] = (192, 192, 192),
@@ -106,7 +108,7 @@ class Gym(object):
 
         loss = crf_loss if use_crf else 'categorical_crossentropy'
         metrics = [crf_viterbi_accuracy] if use_crf else ['acc']
-        self.model.compile(optimizer=Nadam(clipnorm=5.0), loss=loss, metrics=metrics)
+        self.model.compile(optimizer=Adam(lr=lr, clipnorm=5.0), loss=loss, metrics=metrics)
         self.model.summary()
         return self
 
@@ -119,8 +121,8 @@ class Gym(object):
         log_dir = Path(log_dir).joinpath(datetime.now().replace(microsecond=0).isoformat())
         model_path = Path(log_dir).joinpath('checkpoints').joinpath("best-model.joblib")
         model_path.parent.mkdir(parents=True, exist_ok=True)
-        np.savetxt(fname=Path(log_dir).joinpath('commandline.txt'), X=sys.argv, fmt='%s')
-        np.savetxt(fname=Path(log_dir).joinpath('params.txt'), X=[json.dumps({'params': self.params, 'commit': get_current_commit()}, indent=4, sort_keys=True)], fmt='%s')
+        with open(Path(log_dir).joinpath('params.json'), 'w', encoding='utf-8') as f:
+            json.dump({'params': self.params, 'commandline': sys.argv, 'commit': get_current_commit()}, f, indent=4)
 
         train_generator = DataGenerator(dataset=self.train_dataset, processor=self.processor, batch_size=batch_size)
         valid_generator = DataGenerator(dataset=self.valid_dataset, processor=self.processor, batch_size=batch_size,
@@ -133,7 +135,9 @@ class Gym(object):
                        ClassifierTensorBoard(labels=[f'{bmes}: {seg_type}' for bmes, seg_type in self.label_mapping.keys], log_dir=log_dir),
                        Checkpoint(on_save_callback=(lambda: Word2Morph(model=self.model, processor=self.processor).save(model_path)) if save_best else lambda: None, monitor=monitor_metric, save_best_only=True, verbose=1),
                        ComparableEarlyStopping(to_compare_values=best_training_curve, monitor=monitor_metric, patience=patience),
-                       EarlyStopping(monitor=monitor_metric, patience=patience)],
+                       EarlyStopping(monitor=monitor_metric, patience=patience),
+                       LearningRateScheduler(ExponentialDecay(initial_lr=self.params['lr'], rate=0.05), verbose=1),
+                       ],
             class_weight=self.class_weights,
             use_multiprocessing=True, workers=threads,
         )
