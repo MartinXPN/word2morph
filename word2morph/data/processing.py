@@ -1,4 +1,3 @@
-from math import log, inf
 from typing import Tuple, List, Optional
 
 import numpy as np
@@ -14,7 +13,6 @@ class DataProcessor(object):
     1. Generates network input/label from a Sample
     2. Generates a valid Sample from network input and prediction
     """
-
     def __init__(self,
                  char_mapping: CharToIdMapping,
                  word_segment_mapping: WordSegmentTypeToIdMapping,
@@ -79,54 +77,6 @@ class DataProcessor(object):
             return len(self.word_segment_mapping) * len(self.bmes_mapping)
         return len(self.label_mapping)
 
-    def penalty(self, sequence: List[int], cur_id: int, seq_score: float, cur_prob: float) -> float:
-        """
-        Penalty for the sequence with next predicted value
-        :param sequence: the ids of the whole sequence
-        :param cur_id: the last element which is to be scored against adding it to the sequence
-        :param seq_score: current score of the sequence
-        :param cur_prob: predicted probability of having cur_id at this position
-        :return: penalty for cur_id being added to the sequence
-        """
-        ok = True
-        if sequence:
-            # M,        ROOT
-            cur_seg, cur_type = self.label_mapping.keys[cur_id]
-            prev_seg, prev_type = self.label_mapping.keys[sequence[-1]]
-
-            # Check start of a new sequence
-            if prev_type != cur_type:
-                if (prev_seg == BMESToIdMapping.SINGLE and cur_seg in {BMESToIdMapping.MID, BMESToIdMapping.END}) or \
-                        (prev_seg == BMESToIdMapping.BEGIN) or \
-                        (prev_seg == BMESToIdMapping.MID) or \
-                        (prev_seg == BMESToIdMapping.END and cur_seg in {BMESToIdMapping.MID, BMESToIdMapping.END}):
-                    ok = False
-            else:
-                if (prev_seg == BMESToIdMapping.SINGLE and cur_seg in {BMESToIdMapping.MID, BMESToIdMapping.END}) or \
-                        (prev_seg == BMESToIdMapping.BEGIN and cur_seg in {BMESToIdMapping.SINGLE, BMESToIdMapping.BEGIN}) or \
-                        (prev_seg == BMESToIdMapping.MID and cur_seg in {BMESToIdMapping.SINGLE, BMESToIdMapping.BEGIN}) or \
-                        (prev_seg == BMESToIdMapping.END and cur_seg in {BMESToIdMapping.MID, BMESToIdMapping.END}):
-                    ok = False
-
-        return seq_score * -log(cur_prob) if ok and cur_prob else inf
-
-    def beam_search(self, data: np.ndarray, k: int) -> List[Tuple[List[int], float]]:
-        sequences: List[Tuple[List[int], float]] = [(list(), 1.0)]
-        # walk over each step in sequence
-        for row in data:
-            all_candidates = list()
-            # expand each current candidate
-            for i in range(len(sequences)):
-                seq, score = sequences[i]
-                for j in range(len(row)):
-                    candidate = (seq + [j], self.penalty(sequence=seq, cur_id=j, seq_score=score, cur_prob=row[j]))
-                    all_candidates.append(candidate)
-            # order all candidates by score
-            ordered = sorted(all_candidates, key=lambda tup: tup[1])
-            # select k best
-            sequences = ordered[:k]
-        return sequences
-
     def to_sample(self, word: str, prediction: np.ndarray) -> Sample:
         """
         The current implementation is a simple greedy algorithm -> take max from all possible values for each position
@@ -134,32 +84,61 @@ class DataProcessor(object):
         :param prediction: np.array with shape (nb_chars, nb_classes_per_char) -> (9, 25): the output of softmax
         :return: corresponding valid Sample from the prediction
         """
+        def is_valid(seg: BMESToIdMapping, seg_type: str):
+            try:
+                self.label_to_id(seg=seg, seg_type=seg_type)
+                return True
+            except KeyError:
+                return False
 
         assert len(prediction.shape) == 2
         assert prediction.shape[0] >= len(word) and prediction.shape[1] == self.nb_classes()
+        current_seg: Optional[BMESToIdMapping] = None
+        current_seg_type: Optional[str] = None
+        current_seg_start: int = 0
+        segments: List[Segment] = []
+
+        for i, c in enumerate(word):
+            ''' Check for Single or Begin for all segment types '''
+            if current_seg is None or current_seg in {self.bmes_mapping.END, self.bmes_mapping.SINGLE}:
+                single = [-1 if not is_valid(self.bmes_mapping.SINGLE, seg_type) else
+                          prediction[i][self.label_to_id(seg=self.bmes_mapping.SINGLE, seg_type=seg_type)]
+                          for seg_type in self.word_segment_mapping.keys]
+                begin = [-1 if not is_valid(self.bmes_mapping.BEGIN, seg_type) else
+                         prediction[i][self.label_to_id(seg=self.bmes_mapping.BEGIN, seg_type=seg_type)]
+                         for seg_type in self.word_segment_mapping.keys]
+
+                single_best = np.argmax(single)
+                begin_best = np.argmax(begin)
+                if max(single) > max(begin) or i == len(word) - 1:
+                    current_seg_type = self.word_segment_mapping.keys[single_best]
+                    segments.append(Segment(word[current_seg_start: i+1], segment_type=current_seg_type))
+                    current_seg_start = i + 1
+                    current_seg = self.bmes_mapping.SINGLE
+                else:
+                    current_seg_type = self.word_segment_mapping.keys[begin_best]
+                    current_seg = self.bmes_mapping.BEGIN
+
+                ''' Check for Mid or End for the current segment type '''
+            elif current_seg in {self.bmes_mapping.BEGIN, self.bmes_mapping.MID}:
+                if (is_valid(self.bmes_mapping.END, current_seg_type) and
+                        prediction[i][self.label_to_id(seg=self.bmes_mapping.END, seg_type=current_seg_type)] >
+                        prediction[i][self.label_to_id(seg=self.bmes_mapping.MID, seg_type=current_seg_type)]) or \
+                        i == len(word) - 1:
+                    segments.append(Segment(word[current_seg_start: i+1], segment_type=current_seg_type))
+                    current_seg_start = i + 1
+                    current_seg = self.bmes_mapping.END
+                else:
+                    current_seg = self.bmes_mapping.MID
+
+            # Only the selected option should be 1. Others become 0
+            prediction[i] = 0
+            prediction[i][self.label_to_id(current_seg, current_seg_type)] = 1
 
         # make elements of padding equal to 0
         for i in range(len(word), prediction.shape[0]):
             prediction[i] = 0
-        sequences = self.beam_search(data=prediction[:len(word)], k=3)
 
-        segments: List[Segment] = []
-        current_seg: Optional[BMESToIdMapping] = None
-        current_seg_type: Optional[str] = None
-        current_seg_start: int = 0
-        for i in range(len(word)):
-            label_id = sequences[0][0][i]
-            if current_seg is None or current_seg_type is None:
-                current_seg, current_seg_type = self.label_mapping.keys[label_id]
-
-            current_seg, _ = self.label_mapping.keys[label_id]
-
-            if current_seg in {BMESToIdMapping.SINGLE, BMESToIdMapping.END}:
-                segments.append(Segment(word[current_seg_start: i + 1], segment_type=current_seg_type))
-                current_seg_start = i + 1
-                current_seg, current_seg_type = None, None
-
-        if current_seg is not None:
-            segments.append(Segment(word[current_seg_start:], segment_type=current_seg_type))
-
+        # Make sure we've processed the whole word
+        assert current_seg_start >= len(word)
         return Sample(word=word, segments=tuple(segments))
