@@ -17,7 +17,7 @@ class KeyToIdMapping(Mapping):
                  include_unknown: bool = True):
 
         super().__init__()
-        self.keys = [self.UNK] if include_unknown else []
+        self.keys: List[T] = [self.UNK] if include_unknown else []
         self.keys += list(keys)
         self.key_to_id = {key: i for i, key in enumerate(self.keys)}
 
@@ -76,9 +76,9 @@ class BMESToIdMapping(KeyToIdMapping):
 class LabelToIdMapping(KeyToIdMapping):
     def __init__(self,
                  labels: Union[Iterable[Tuple[BMESToIdMapping, str]],
-                               Iterable[Tuple[str]]],
+                               Iterable[BMESToIdMapping]],
                  include_unknown: bool = False):
         """
         :param labels: [BMES, segment.type]
         """
-        super().__init__(list(dict.fromkeys(labels)), include_unknown)
+        super().__init__(keys=list(dict.fromkeys(labels)), include_unknown=include_unknown)
