@@ -128,7 +128,7 @@ class DataProcessor(object):
 
         return sequences
 
-    def to_sample(self, word: str, prediction: np.ndarray, beam_size: int = 7) -> Sample:
+    def to_sample(self, word: str, prediction: np.ndarray, beam_size: int = 2) -> Sample:
         """
         :param word: input word (needed so that this method could produce a valid Sample)
         :param prediction: np.array with shape (nb_chars, nb_classes_per_char) -> (9, 25): the output of softmax
