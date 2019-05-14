@@ -24,12 +24,12 @@ PYTHONHASHSEED=0 python -m word2morph.train
 ```bash
 PYTHONHASHSEED=0 python -m word2morph.hyperparametersearch
         init_data --train_path datasets/rus.train --valid_path datasets/rus.valid
-        search_hyperparameters --nb_trials 50 --epochs 75 --patience 10 --log_dir logs
+        search_hyperparameters --nb_trials 50 --epochs 100 --patience 10 --log_dir logs
 ```
 
 ### Predict on test data
 ```bash
 PYTHONHASHSEED=0 python -m word2morph.predict
-        --model_path logs/<timestamp>/checkpoints/<modelname.joblib>
+        --model_path logs/<timestamp>/checkpoints/best-model.joblib
         --batch_size 1 --input_path path_to_input.txt --output_path path_to_output.txt
 ```

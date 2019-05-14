@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='word2morph',
-    version='0.2.0',
+    version='1.0.0',
     description='Python package for neural morpheme extraction from words',
     author='Martin Mirakyan',
     author_email='mirakyanmartin@gmail.com',
