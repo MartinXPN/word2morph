@@ -1,7 +1,7 @@
 import json
 import os
 import sys
-from copy import copy
+from copy import deepcopy
 from datetime import datetime
 from itertools import chain
 from pathlib import Path
@@ -168,6 +168,9 @@ class ModelInstance:
     def __str__(self):
         return f'Model with perf: {self.performance}, lr: {self.lr}, saved at: {self.path}'
 
+    def __hash__(self):
+        return hash((self.performance, self.lr, self.path))
+
 
 class LearningRateBeamSearchGym(Gym):
 
@@ -193,7 +196,7 @@ class LearningRateBeamSearchGym(Gym):
         best_prev_models: List[ModelInstance] = []
 
         for epoch in range(epochs):
-            best_prev_models = copy(best_current_models)
+            best_prev_models = deepcopy(best_current_models)
             best_current_models = []
 
             def log_model(score):
@@ -205,11 +208,12 @@ class LearningRateBeamSearchGym(Gym):
                 print('Obtained:', str(best_current_models[-1]), flush=True)
                 Word2Morph(model=self.model, processor=self.processor).save(path)
 
+                best_current_models = list(set(best_current_models))
                 best_current_models = sorted(best_current_models, reverse=True)
                 best_current_models, worst = best_current_models[:nb_models], best_current_models[nb_models:]
                 for model in worst:
-                    if Path(model.path).exists():
-                        os.remove(model.path)
+                    print('Removing:', model.path, flush=True)
+                    os.remove(model.path)
 
             # There are no models for the initial epoch => use the initial random model as the base model
             if len(best_current_models) == 0:
