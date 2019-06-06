@@ -201,10 +201,9 @@ class LearningRateBeamSearchGym(Gym):
 
             def log_model(score):
                 nonlocal best_current_models
-                path = f'{log_dir}/model-epoch:{epoch}-acc:{score:.3f}.joblib'
-                best_current_models.append(ModelInstance(performance=score,
-                                                         path=path,
-                                                         lr=float(K.get_value(self.model.optimizer.lr))))
+                learning_rate = float(K.get_value(self.model.optimizer.lr))
+                path = f'{log_dir}/model-epoch:{epoch}-acc:{score:.3f}-lr:{learning_rate:.3f}.joblib'
+                best_current_models.append(ModelInstance(performance=score, path=path, lr=learning_rate))
                 print('Obtained:', str(best_current_models[-1]), flush=True)
                 Word2Morph(model=self.model, processor=self.processor).save(path)
 
