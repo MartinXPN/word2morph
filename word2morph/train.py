@@ -169,7 +169,7 @@ class ModelInstance:
         return f'Model with perf: {self.performance}, lr: {self.lr}, saved at: {self.path}'
 
     def __hash__(self):
-        return hash((self.performance, self.lr, self.path))
+        return hash(self.path)
 
 
 class LearningRateBeamSearchGym(Gym):
@@ -213,6 +213,11 @@ class LearningRateBeamSearchGym(Gym):
                 for model in worst:
                     print('Removing:', model.path, flush=True)
                     os.remove(model.path)
+
+                print('Resulting list:')
+                for i, model in enumerate(best_current_models):
+                    print(i, ':', str(model))
+                print(flush=True)
 
             # There are no models for the initial epoch => use the initial random model as the base model
             if len(best_current_models) == 0:
