@@ -226,6 +226,12 @@ class LearningRateBeamSearchGym(Gym):
             for base_model in best_prev_models:
                 for lr_multiplier in lr_multipliers:
                     print('Trying to modify:', str(base_model), flush=True)
+
+                    # Clean-up the keras session before working with a new model
+                    del self.model
+                    K.clear_session()
+                    gc.collect()
+
                     w2m = Word2Morph.load_model(base_model.path)
                     self.model, self.processor = w2m.model, w2m.processor
                     lr = float(K.get_value(self.model.optimizer.lr))
