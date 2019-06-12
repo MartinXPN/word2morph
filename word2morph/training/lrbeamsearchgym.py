@@ -91,6 +91,7 @@ class LearningRateBeamSearchGym(Gym):
                     print('Trying to modify:', str(base_model), flush=True)
 
                     # Clean-up the keras session before working with a new model
+                    del self.processor
                     del self.model
                     K.clear_session()
                     gc.collect()
