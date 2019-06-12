@@ -14,15 +14,22 @@ pip install .
 
 ### Train a model
 ```bash
-PYTHONHASHSEED=0 python -m word2morph.train
+# Basic training 
+PYTHONHASHSEED=0 python -m word2morph.train basic_train
         init_data --train_path datasets/rus.train --valid_path datasets/rus.valid
         construct_model --model_type CNN --embeddings_size 8 --kernel_sizes '(5,5,5)' --nb_filters '(192,192,192)' --dilations '(1,1,1)' --recurrent_units '(64,128,256)' --use_crf=True --dense_output_units 64 --dropout 0.2
-        train --batch_size 32 --epochs 75 --patience 10 --log_dir logs
-```
+        train --batch_size 64 --epochs 75 --patience 10 --log_dir logs
 
-### Hyperparameter search (Bayesian tuning and bandits)
-```bash
-PYTHONHASHSEED=0 python -m word2morph.hyperparametersearch
+
+# Beam search on the learning rate 
+PYTHONHASHSEED=0 python -m word2morph.train lr_beam_search
+        init_data --train_path datasets/rus.train --valid_path datasets/rus.valid
+        construct_model --model_type CNN --embeddings_size 8 --kernel_sizes '(5,5,5)' --nb_filters '(192,192,192)' --dilations '(1,1,1)' --recurrent_units '(64,128,256)' --use_crf=True --dense_output_units 64 --dropout 0.2
+        train --batch_size 64 --epochs 75 --lr_multipliers '(0.5,1,2)' --nb_models 3 --log_dir logs
+
+
+# Hyperparameter search (Bayesian tuning and bandits)
+PYTHONHASHSEED=0 python -m word2morph.train hyperparameter_search
         init_data --train_path datasets/rus.train --valid_path datasets/rus.valid
         search_hyperparameters --nb_trials 50 --epochs 100 --patience 10 --log_dir logs
 ```
