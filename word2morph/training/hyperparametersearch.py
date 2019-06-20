@@ -1,12 +1,11 @@
 from copy import deepcopy
 
-import fire
 import numpy as np
 from btb import HyperParameter, ParamTypes
 from btb.selection import UCB1
 from btb.tuning import GP
 
-from word2morph.train import Gym
+from word2morph.training.gym import Gym
 from word2morph.util.args import map_arguments
 
 
@@ -118,7 +117,3 @@ class HyperparameterSearchGym(Gym):
             # noinspection PyProtectedMember
             print(f'Best score for {model_choice} model: {model._best_score} '
                   f'with hyperparameters: {model._best_hyperparams}')
-
-
-if __name__ == '__main__':
-    fire.Fire(HyperparameterSearchGym)
